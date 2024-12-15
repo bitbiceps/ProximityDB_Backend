@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 dotenv.config({ path: ".env" });
 const mongoose = require("mongoose");
-const authRoutes = require('./routes/authRoutes');
+const authRoutes = require("./routes/authRoutes");
 
 const db = process.env.DB.replace("<db_password>", process.env.password);
 console.log("dbbb", db);
@@ -18,8 +18,11 @@ mongoose
 
 const app = express();
 
-app.use(cors({ origin: "*" }));
+app.use(cors({
+  origin: "*"
+}));
 
+app.options("*", cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 
