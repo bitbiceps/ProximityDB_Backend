@@ -1,19 +1,12 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "mohd.k@saimanshetty.com",
-    pass: "dhop yevr fmak mggi",
-  },
-});
 
 exports.registerUser = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, termsAccepted } = req.body;
+
+    console.log(fullName, email, password, phoneNumber, termsAccepted);
 
     if (!termsAccepted) {
       return res
@@ -23,36 +16,11 @@ exports.registerUser = async (req, res) => {
 
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      if (!existingEmail.isVerified) {
-        const token = jwt.sign(
-          { email: existingEmail.email },
-          process.env.JWT_SECRET,
-          {
-            expiresIn: "1h",
-          }
-        );
-        const verificationLink = `http://localhost:5000/api/auth/verify/${token}`;
-
-        await transporter.sendMail({
-          from: "mohd.k@saimanshetty.com",
-          to: email,
-          subject: "Verify your email",
-          text: `Click the link to verify your account: ${verificationLink}`,
-        });
-
-        return res.status(200).json({
-          message:
-            "User already registered but not verified. A new verification email has been sent.",
-        });
-      }
-
-      return res
-        .status(400)
-        .json({ message: "Email is already registered and verified." });
+      return res.status(400).json({ message: "Email is already registered." });
     }
 
     const existingPhoneNumber = await User.findOne({ phoneNumber });
-    if (existingPhoneNumber && existingPhoneNumber.isVerified) {
+    if (existingPhoneNumber) {
       return res
         .status(400)
         .json({ message: "Phone number is already registered." });
@@ -68,23 +36,9 @@ exports.registerUser = async (req, res) => {
       termsAccepted,
     });
 
-    const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-    const verificationLink = `http://localhost:5000/api/auth/verify/${token}`;
-
-    await transporter.sendMail({
-      from: "mohd.k@saimanshetty.com",
-      to: email,
-      subject: "Verify your email",
-      text: `Click the link to verify your account: ${verificationLink}`,
-    });
-
-    res.status(201).json({
-      message: "User registered successfully. Please verify your email.",
-      userId: newUser._id,
-      token: token,
-    });
+    res
+      .status(201)
+      .json({ message: "User registered successfully", userId: newUser._id });
   } catch (error) {
     res
       .status(500)
@@ -92,56 +46,50 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-exports.verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.params;
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({ email: decoded.email });
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid token" });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: "User already verified" });
-    }
-
-    user.isVerified = true;
-    await user.save();
-
-    res.status(200).json({ message: "Email verified. You can now log in." });
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Invalid or expired token", error: error.message });
-  }
-};
-
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    if (!user.isVerified) {
-      return res
-        .status(400)
-        .json({ message: "Please verify your email to log in." });
-    }
-
+    // Validate password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    // Generate Access Token (short-lived)
+    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "2h",
     });
-    res.status(200).json({ message: "Login successful", token });
+
+    // Generate Refresh Token (long-lived)
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET, // Use a separate secret for refresh tokens if available
+      { expiresIn: "7d" }
+    );
+
+    // Optionally, save the refresh token in the database if needed
+    user.refreshToken = refreshToken; // Assumes `refreshToken` is a field in your User model
+    await user.save();
+
+    // Send tokens in the response
+    res.status(200).json({
+      message: "Login successful",
+      tokens: { accessToken, refreshToken },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error logging in", error: error.message });
+  }
+};
+exports.getUser = async (req, res) => {
+  try {
+    res.status(200).json({ message: "User home" });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });
   }

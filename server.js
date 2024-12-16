@@ -18,11 +18,8 @@ mongoose
 
 const app = express();
 
-app.use(cors({
-  origin: "*"
-}));
+app.use(cors({ origin: "*" }));
 
-app.options("*", cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 
