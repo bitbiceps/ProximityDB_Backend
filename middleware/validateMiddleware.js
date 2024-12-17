@@ -1,14 +1,14 @@
-exports.validateRegistration = (req, res, next) => {
-  const { fullName, email, password,phoneNumber, termsAccepted } = req.body;
+export const validateRegistration = (req, res, next) => {
+  const { fullName, email, password, phoneNumber, termsAccepted } = req.body;
 
-  if (!fullName || !email || !password ||!phoneNumber || !termsAccepted) {
+  if (!fullName || !email || !password || !phoneNumber || !termsAccepted) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   next();
 };
 
-exports.validateLogin = (req, res, next) => {
+export const validateLogin = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {

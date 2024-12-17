@@ -1,7 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const {createPayment} = require('../controllers/paymentController');
+import express from "express";
+import { createPayment } from "../controllers/paymentController.js";
 
-router.post('/create-payment-intent',createPayment)
-// router.post('/webhooks/stripe',handlePaymentWebhook)
-module.exports = router;
+const router = express.Router();
+
+router.post("/create-payment-intent", createPayment);
+router.post("/webhooks/stripe", handlePaymentWebhook);
+
+export default router;
