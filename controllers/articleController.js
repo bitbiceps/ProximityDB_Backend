@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "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", // Replace with your OpenAI API key
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export const handleQuestionnaire = async (req, res) => {
