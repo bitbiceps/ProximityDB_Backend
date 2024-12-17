@@ -6,13 +6,12 @@ import Payment from "../models/paymentModel.js";
 
 export const createPayment = async (req, res) => {
   const { userId, amount } = req.body;
-
+  console.log("userId", req.body);
   try {
     const existingPayment = await Payment.findOne({
       userId,
-      amount,
-      status: "pending",
     });
+    console.log("exist", existingPayment);
 
     if (existingPayment) {
       return res.status(400).json({
@@ -34,7 +33,7 @@ export const createPayment = async (req, res) => {
       paymentIntentId: paymentIntent.id,
       status: "pending",
     });
-
+    console.log("order", order);
     await order.save();
     res.status(201).json({
       message: "Order created successfully",
@@ -52,10 +51,10 @@ export const handlePaymentWebhook = async (req, res) => {
   console.log("sig", sig, "req", req.body, "typeee", typeof req.body);
   try {
     if (typeof req.body === "string" || Buffer.isBuffer(req.body)) {
-      event = stripe.webhooks.constructEvent(
-        req.body, 
-        sig, 
-        "whsec_tdpRJkiDUzG0A6ktfKpmtyT6Fd4lMcTe" 
+      event = await stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        "whsec_tdpRJkiDUzG0A6ktfKpmtyT6Fd4lMcTe"
       );
     } else {
       console.log("notraw");
@@ -70,13 +69,15 @@ export const handlePaymentWebhook = async (req, res) => {
   console.log("event.tu", event.type);
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object;
-    console.log("paymentIntent", paymentIntent);
+    console.log("paymentIntent", paymentIntent.status, paymentIntent.id);
+    const changeStatus = await Payment.findOne({
+      paymentIntentId: paymentIntent.id,
+    });
+    console.log("change", changeStatus);
     try {
-      await Payment.findOneAndUpdate(
-        { paymentIntentId: paymentIntent.id },
-        { status: "success" },
-        { new: true }
-      );
+      changeStatus.status = "succeeded";
+      await changeStatus.save();
+      console.log("channnnnnnn", changeStatus);
     } catch (error) {
       console.error("Error updating payment status:", error);
     }

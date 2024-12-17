@@ -2,33 +2,32 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
-import authRoutes from "./routes/authRoutes.js"; // Ensure you use the `.js` extension
-import paymentRoutes from "./routes/paymentRoutes.js"; // Ensure you use the `.js` extension
+import authRoutes from "./routes/authRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import articleRouter from "./routes/articleRoutes.js";
+import webhookRouter from "./routes/webhookRoutes.js";
 
 dotenv.config({ path: ".env" });
 
-const db = process.env.DB.replace("<db_password>", process.env.password);
-console.log("dbbb", db);
-mongoose
-  .connect(db)
-  .then(() => {
-    console.log("Database connected successfully!!");
-  })
-  .catch((err) => {
-    console.log("Error connecting to database", err);
-  });
-
 const app = express();
 
+const db = process.env.DB.replace("<db_password>", process.env.password);
+mongoose
+  .connect(db)
+  .then(() => console.log("Database connected successfully!!"))
+  .catch((err) => console.log("Error connecting to database", err));
+
 app.use(cors({ origin: "*" }));
-app.use(express.json())
-app.use("/api/auth",authRoutes);
 
+app.use(
+  "/webhooks",
+  express.raw({ type: "application/json" }), 
+  webhookRouter
+);
 
-app.use("/", paymentRoutes);
-app.use("/article", articleRouter);
+app.use("/api/auth", express.json(), authRoutes);
+app.use("/api", express.json(), paymentRoutes);
+app.use("/article", express.json(), articleRouter);
 
-// Set the port and start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
