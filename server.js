@@ -22,8 +22,9 @@ mongoose
 const app = express();
 
 app.use(cors({ origin: "*" }));
+app.use(express.json())
+app.use("/api/auth",authRoutes);
 
-app.use("/api/auth", express.json(), authRoutes);
 
 app.use("/", paymentRoutes);
 app.use("/article", articleRouter);
