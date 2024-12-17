@@ -1,26 +1,26 @@
+import Stripe from 'stripe';
+
 // const stripe = require("stripe")(
 //   "sk_test_51QWIkaBBg8UnRcHybzdQ3WnonFAUkN5iAqnI3gqAobKlKihuBCu3VNBSNhvTLkuq0STGS4IUbALRcxbIfSMzS9dS00zFEgn96x"
 // );
 // const Payment = require("../models/paymentModel");
 // exports.createPayment = async (req, res) => {
 //   const { userId, amount } = req.body;
-// console.log("uuuuuuu",userId,amount)
+//   console.log("uuuuuuu",userId,amount)
 //   try {
 //     const paymentIntent = await stripe.paymentIntents.create({
 //       amount,
 //       currency: "inr",
 //       metadata: { userId },
 //     });
-
 //     const order = new Payment({
 //       userId,
 //       amount,
 //       paymentIntentId: paymentIntent.id,
 //       status: "pending",
 //     });
-
 //     await order.save();
-// console.log("gvbhnj",paymentIntent.client_secret)
+//     console.log("gvbhnj",paymentIntent.client_secret)
 //     res.status(201).json({
 //       message: "Order created successfully",
 //       clientSecret: paymentIntent.client_secret,
@@ -30,12 +30,12 @@
 //     res.status(500).json({ error: error.message });
 //   }
 // };
-const stripe = require("stripe")(
+
+const stripe = Stripe(
   "sk_test_51QWIkaBBg8UnRcHybzdQ3WnonFAUkN5iAqnI3gqAobKlKihuBCu3VNBSNhvTLkuq0STGS4IUbALRcxbIfSMzS9dS00zFEgn96x"
 );
-const Payment = require("../models/paymentModel");
 
-exports.createPayment = async (req, res) => {
+export const createPayment = async (req, res) => {
   const { userId, amount } = req.body;
 
   try {
