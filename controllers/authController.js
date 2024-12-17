@@ -5,7 +5,7 @@ import User from "../models/userModel.js";
 export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, termsAccepted } = req.body;
-
+    console.log("req.bbbbbbbbbb", req.body);
     console.log(fullName, email, password, phoneNumber, termsAccepted);
 
     if (!termsAccepted) {

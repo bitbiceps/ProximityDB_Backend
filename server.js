@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js"; // Ensure you use the `.js` extension
+import paymentRoutes from "./routes/paymentRoutes.js"; // Ensure you use the `.js` extension
 
 // Load environment variables from .env file
 dotenv.config({ path: ".env" });
@@ -30,6 +31,8 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
+
+app.use("/", paymentRoutes);
 
 // Set the port and start the server
 const PORT = process.env.PORT || 3000;

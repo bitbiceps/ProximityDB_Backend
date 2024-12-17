@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+import Stripe from 'stripe';
 
 // const stripe = require("stripe")(
 //   "sk_test_51QWIkaBBg8UnRcHybzdQ3WnonFAUkN5iAqnI3gqAobKlKihuBCu3VNBSNhvTLkuq0STGS4IUbALRcxbIfSMzS9dS00zFEgn96x"
