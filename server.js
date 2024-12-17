@@ -4,6 +4,7 @@ const cors = require("cors");
 dotenv.config({ path: ".env" });
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const db = process.env.DB.replace("<db_password>", process.env.password);
 console.log("dbbb", db);
@@ -22,6 +23,9 @@ app.use(cors({ origin: "*" }));
 
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+
+app.use("/",paymentRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
