@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-exports.verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     if (!authHeader) {
         return res.status(403).json({ message: 'No token provided' });
@@ -13,7 +13,7 @@ exports.verifyToken = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET); 
-        console.log("decc",decoded,"tttttttttt",token)
+        console.log("Decoded:", decoded, "Token:", token);
         req.userId = decoded.userId;
         next(); 
     } catch (error) {
