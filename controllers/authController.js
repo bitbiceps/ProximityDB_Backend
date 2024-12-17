@@ -100,19 +100,19 @@ export const registerUser = async (req, res) => {
     if (!termsAccepted) {
       return res
         .status(400)
-        .json({ message: 'You must agree to the terms and conditions.' });
+        .json({ message: "You must agree to the terms and conditions." });
     }
 
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      return res.status(400).json({ message: 'Email is already registered.' });
+      return res.status(400).json({ message: "Email is already registered." });
     }
 
     const existingPhoneNumber = await User.findOne({ phoneNumber });
     if (existingPhoneNumber) {
       return res
         .status(400)
-        .json({ message: 'Phone number is already registered.' });
+        .json({ message: "Phone number is already registered." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -137,11 +137,11 @@ export const registerUser = async (req, res) => {
           });
     res
       .status(201)
-      .json({ message: 'User registered successfully', userId: newUser._id });
+      .json({ message: "User registered successfully", userId: newUser._id });
   } catch (error) {
     res
       .status(500)
-      .json({ message: 'Error registering user', error: error.message });
+      .json({ message: "Error registering user", error: error.message });
   }
 };
 export const verifyEmail = async (req, res) => {
@@ -176,6 +176,7 @@ export const loginUser = async (req, res) => {
      console.log("req",req.body)
     const user = await User.findOne({ email });
     if (!user) {
+<<<<<<< HEAD
       return res.status(400).json({ message: "Invalid email" });
     }
 
@@ -183,11 +184,18 @@ export const loginUser = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Please verify your email to log in." });
+=======
+      return res.status(400).json({ message: "Invalid email or password" });
+>>>>>>> feature/articles
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+<<<<<<< HEAD
       return res.status(400).json({ message: "Invalid password" });
+=======
+      return res.status(400).json({ message: "Invalid email or password" });
+>>>>>>> feature/articles
     }
 
     const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -195,9 +203,24 @@ export const loginUser = async (req, res) => {
     });
     console.log("tok",accessToken)
 
+<<<<<<< HEAD
     const refreshToken=""
+=======
+    // Generate Refresh Token (long-lived)
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET, // Use a separate secret for refresh tokens if available
+      { expiresIn: "7d" }
+    );
+
+    // Optionally, save the refresh token in the database if needed
+    user.refreshToken = refreshToken; // Assumes `refreshToken` is a field in your User model
+    await user.save();
+
+    // Send tokens in the response
+>>>>>>> feature/articles
     res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       tokens: { accessToken, refreshToken },
     });
   } catch (error) {
@@ -205,6 +228,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 
 
 // export const loginUser = async (req, res) => {
@@ -256,3 +280,12 @@ export const loginUser = async (req, res) => {
 //     res.status(500).json({ message: 'Error logging in', error: error.message });
 //   }
 // };
+=======
+export const getUser = async (req, res) => {
+  try {
+    res.status(200).json({ message: "User home" });
+  } catch (error) {
+    res.status(500).json({ message: "Error logging in", error: error.message });
+  }
+};
+>>>>>>> feature/articles

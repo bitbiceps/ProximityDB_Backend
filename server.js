@@ -4,6 +4,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js"; // Ensure you use the `.js` extension
 import paymentRoutes from "./routes/paymentRoutes.js"; // Ensure you use the `.js` extension
+import articleRouter from "./routes/articleRoutes.js";
 
 dotenv.config({ path: ".env" });
 
@@ -24,6 +25,9 @@ app.use(cors({ origin: "*" }));
 
 app.use("/api/auth", express.json(), authRoutes);
 
-app.use("/", express.json(), paymentRoutes);
+app.use("/", paymentRoutes);
+app.use("/article", articleRouter);
+
+// Set the port and start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
