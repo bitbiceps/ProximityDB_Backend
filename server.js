@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import articleRouter from "./routes/articleRoutes.js";
 import webhookRouter from "./routes/webhookRoutes.js";
+import topicRouter from "./routes/topicRoutes.js";
 
 dotenv.config({ path: ".env" });
 
@@ -24,6 +25,7 @@ app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 app.use("/api/auth", express.json(), authRoutes);
 app.use("/api", express.json(), paymentRoutes);
 app.use("/article", express.json(), articleRouter);
+app.use("/topic",express.json(),topicRouter)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -31,7 +31,7 @@ const articleSchema = new mongoose.Schema(
     },
 
     // Boolean to track if a change is requested for the article
-    changeRequested: {
+    updateRequested: {
       type: Boolean,
       default: false,
     },
