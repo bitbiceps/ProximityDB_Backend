@@ -149,8 +149,10 @@ export const handleVerifyTopicRequest = async (req, res) => {
     const { topicId, index } = req.body; // Get topicId and index from body
 
     // Find the topic document by its ID
-    const topic = await topicModel.findOne({ _id: topicId });
+    console.log("topic",topicId,index)
 
+    const topic = await topicModel.findOne({ "topics._id": topicId });
+    console.log("topic",topic)
     if (!topic) {
       return res.status(404).json({ message: "Topic document not found" });
     }
@@ -211,43 +213,40 @@ export const handleUpdateSuggestion = async (req, res) => {
   }
 };
 
-
-
-
 export const handleSubmitTopic = async (req, res) => {
-    try {
-      const { topicId } = req.body;  // Get topicId from the request body
-  
-      // Find the topic document by its ID
-      const topic = await topicModel.findById(topicId);
-  
-      if (!topic) {
-        return res.status(404).json({ message: "Topic document not found" });
-      }
-  
-      // Set the `submitted` field to `true`
-      topic.submitted = true;
-  
-      // Reset the `updateRequested` and `verifyRequested` fields for all topics in the `topics` array
-      topic.topics.forEach(t => {
-        t.updateRequested = false;
-        t.verifyRequested = false;
-      });
-  
-      // Set the suggestion to `null`
-      topic.suggestion = null;
-  
-      // Save the updated topic document
-      await topic.save();
-  
-      return res.status(200).json({
-        message: "Topic submitted successfully",
-        updatedTopic: topic, // Return the updated topic document
-      });
-    } catch (error) {
-      console.error("Error submitting topic:", error);
-      return res
-        .status(500)
-        .json({ message: "Error submitting topic", error: error.message });
+  try {
+    const { topicId } = req.body; // Get topicId from the request body
+
+    // Find the topic document by its ID
+    const topic = await topicModel.findById(topicId);
+
+    if (!topic) {
+      return res.status(404).json({ message: "Topic document not found" });
     }
-  };
+
+    // Set the `submitted` field to `true`
+    topic.submitted = true;
+
+    // Reset the `updateRequested` and `verifyRequested` fields for all topics in the `topics` array
+    topic.topics.forEach((t) => {
+      t.updateRequested = false;
+      t.verifyRequested = false;
+    });
+
+    // Set the suggestion to `null`
+    topic.suggestion = null;
+
+    // Save the updated topic document
+    await topic.save();
+
+    return res.status(200).json({
+      message: "Topic submitted successfully",
+      updatedTopic: topic, // Return the updated topic document
+    });
+  } catch (error) {
+    console.error("Error submitting topic:", error);
+    return res
+      .status(500)
+      .json({ message: "Error submitting topic", error: error.message });
+  }
+};
