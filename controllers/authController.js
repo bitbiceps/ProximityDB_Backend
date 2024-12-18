@@ -43,17 +43,17 @@ export const registerUser = async (req, res) => {
       phoneNumber,
       termsAccepted,
     });
-        const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
-            expiresIn: "4d",
-          });
-          const verificationLink = `http://localhost:5000/api/auth/verify/${token}`;
-      
-          await transporter.sendMail({
-            from: "mohd.k@saimanshetty.com",
-            to: email,
-            subject: "Verify your email",
-            text: `Click the link to verify your account: ${verificationLink}`,
-          });
+    const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
+      expiresIn: "4d",
+    });
+    const verificationLink = `http://localhost:5000/api/auth/verify/${token}`;
+
+    await transporter.sendMail({
+      from: "mohd.k@saimanshetty.com",
+      to: email,
+      subject: "Verify your email",
+      text: `Click the link to verify your account: ${verificationLink}`,
+    });
     res
       .status(201)
       .json({ message: "User registered successfully", userId: newUser._id });
@@ -77,8 +77,9 @@ export const verifyEmail = async (req, res) => {
     if (user.isVerified) {
       return res.status(400).json({ message: "User already verified" });
     }
-
+    console.log("user", user);
     user.isVerified = true;
+    console.log("userStatus", user.isVerified);
     await user.save();
 
     res.status(200).json({ message: "Email verified. You can now log in." });
@@ -92,7 +93,7 @@ export const verifyEmail = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-     console.log("req",req.body)
+    console.log("reqqq", req.body);
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid email" });
@@ -112,12 +113,14 @@ export const loginUser = async (req, res) => {
     const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "2h",
     });
-    console.log("tok",accessToken)
+    console.log("tok", accessToken);
 
-    const refreshToken=""
+    const refreshToken = "";
     res.status(200).json({
       message: "Login successful",
       tokens: { accessToken, refreshToken },
+      userId: user._id,
+      user:user
     });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });

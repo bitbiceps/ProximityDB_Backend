@@ -24,9 +24,9 @@ app.use(
   express.raw({ type: "application/json" }), 
   webhookRouter
 );
+app.use("/pay", express.json(), paymentRoutes);
 
 app.use("/api/auth", express.json(), authRoutes);
-app.use("/api", express.json(), paymentRoutes);
 app.use("/article", express.json(), articleRouter);
 
 const PORT = process.env.PORT || 3000;

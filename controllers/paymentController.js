@@ -3,9 +3,10 @@ const stripe = Stripe(
   "sk_test_51QWIkaBBg8UnRcHybzdQ3WnonFAUkN5iAqnI3gqAobKlKihuBCu3VNBSNhvTLkuq0STGS4IUbALRcxbIfSMzS9dS00zFEgn96x"
 );
 import Payment from "../models/paymentModel.js";
+import User from "../models/userModel.js";
 
 export const createPayment = async (req, res) => {
-  const { userId, amount } = req.body;
+  const { userId, amount, planId } = req.body;
   console.log("userId", req.body);
   try {
     const existingPayment = await Payment.findOne({
@@ -30,6 +31,7 @@ export const createPayment = async (req, res) => {
     const order = new Payment({
       userId,
       amount,
+      planId,
       paymentIntentId: paymentIntent.id,
       status: "pending",
     });
@@ -74,6 +76,12 @@ export const handlePaymentWebhook = async (req, res) => {
       paymentIntentId: paymentIntent.id,
     });
     console.log("change", changeStatus);
+    const user = await User.findById(changeStatus.userId);
+    console.log("usersss", user);
+    user.planId = changeStatus.planId;
+    user.paymentStatus = true;
+    await user.save()
+    console.log("final",user)
     try {
       changeStatus.status = "succeeded";
       await changeStatus.save();

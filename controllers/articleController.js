@@ -1,14 +1,12 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: "NY6heq7AX5mzW6Hrs2nET3BlbkFJkKqoLAFgHumbcfaWGKTG",
 });
 
 export const handleQuestionnaire = async (req, res) => {
-  const model = "ft:gpt-3.5-turbo-0613:cache-labs-llc:yt-tutorial:8hHNplz0"; // Custom fine-tuned model
-
+  const model = "ft:gpt-3.5-turbo-0613:cache-labs-llc:yt-tutorial:8hHNplz0";
   try {
-    // Destructure input from request body
     const {
       question1,
       question2,
