@@ -176,26 +176,12 @@ export const loginUser = async (req, res) => {
      console.log("req",req.body)
     const user = await User.findOne({ email });
     if (!user) {
-<<<<<<< HEAD
-      return res.status(400).json({ message: "Invalid email" });
-    }
-
-    if (!user.isVerified) {
-      return res
-        .status(400)
-        .json({ message: "Please verify your email to log in." });
-=======
       return res.status(400).json({ message: "Invalid email or password" });
->>>>>>> feature/articles
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-<<<<<<< HEAD
-      return res.status(400).json({ message: "Invalid password" });
-=======
       return res.status(400).json({ message: "Invalid email or password" });
->>>>>>> feature/articles
     }
 
     const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -203,9 +189,6 @@ export const loginUser = async (req, res) => {
     });
     console.log("tok",accessToken)
 
-<<<<<<< HEAD
-    const refreshToken=""
-=======
     // Generate Refresh Token (long-lived)
     const refreshToken = jwt.sign(
       { userId: user._id },
@@ -218,7 +201,6 @@ export const loginUser = async (req, res) => {
     await user.save();
 
     // Send tokens in the response
->>>>>>> feature/articles
     res.status(200).json({
       message: "Login successful",
       tokens: { accessToken, refreshToken },
@@ -228,59 +210,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
-
-
-// export const loginUser = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     // Find user by email
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(400).json({ message: 'Invalid email or password' });
-//     }
-
-//     // Validate password
-//     const isPasswordValid = await bcrypt.compare(password, user.password);
-//     if (!isPasswordValid) {
-//       return res.status(400).json({ message: 'Invalid email or password' });
-//     }
-
-//     // Generate Access Token (short-lived)
-//     const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-//       expiresIn: '2h',
-//     });
-
-//     // Generate Refresh Token (long-lived)
-//     const refreshToken = jwt.sign(
-//       { userId: user._id },
-//       process.env.JWT_SECRET, // Use a separate secret for refresh tokens if available
-//       { expiresIn: '7d' }
-//     );
-
-//     // Optionally, save the refresh token in the database if needed
-//     user.refreshToken = refreshToken; // Assumes `refreshToken` is a field in your User model
-//     await user.save();
-
-//     // Send tokens in the response
-//     res.status(200).json({
-//       message: 'Login successful',
-//       tokens: { accessToken, refreshToken },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error logging in', error: error.message });
-//   }
-// };
-
-// export const getUser = async (req, res) => {
-//   try {
-//     res.status(200).json({ message: 'User home' });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error logging in', error: error.message });
-//   }
-// };
-=======
 export const getUser = async (req, res) => {
   try {
     res.status(200).json({ message: "User home" });
@@ -288,4 +217,3 @@ export const getUser = async (req, res) => {
     res.status(500).json({ message: "Error logging in", error: error.message });
   }
 };
->>>>>>> feature/articles
