@@ -77,8 +77,9 @@ export const verifyEmail = async (req, res) => {
     if (user.isVerified) {
       return res.status(400).json({ message: "User already verified" });
     }
-
+    console.log("user", user);
     user.isVerified = true;
+    console.log("userStatus", user.isVerified);
     await user.save();
 
     res.status(200).json({ message: "Email verified. You can now log in." });
@@ -92,7 +93,7 @@ export const verifyEmail = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("req", req.body);
+    console.log("reqqq", req.body);
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid email" });
@@ -118,6 +119,8 @@ export const loginUser = async (req, res) => {
     res.status(200).json({
       message: "Login successful",
       tokens: { accessToken, refreshToken },
+      userId: user._id,
+      user:user
     });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });

@@ -21,11 +21,11 @@ mongoose
 app.use(cors({ origin: "*" }));
 
 app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
+app.use("/pay", express.json(), paymentRoutes);
 
 app.use("/api/auth", express.json(), authRoutes);
-app.use("/api", express.json(), paymentRoutes);
 app.use("/article", express.json(), articleRouter);
-app.use("/topic",express.json(),topicRouter)
+app.use("/topic", express.json(), topicRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
