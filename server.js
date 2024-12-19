@@ -27,5 +27,14 @@ app.use("/api/auth", express.json(), authRoutes);
 app.use("/article", express.json(), articleRouter);
 app.use("/topic", express.json(), topicRouter);
 
+// Server Status
+app.get("/", async (req, res) => {
+  res.status(200).json({
+    message: "Server is running successfully",
+  });
+});
+
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
