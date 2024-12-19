@@ -107,7 +107,7 @@ const handleCreateArticles = async (body) => {
 export const handleArticleUpdateRequested = async (req, res) => {
   try {
     const { articleId } = req.body; // Get articleId from the request parameters
-
+   console.log("uuuuuuu",articleId)
     // Find the article document by its ID
     const article = await articleModel.findOne({ _id: articleId });
 
