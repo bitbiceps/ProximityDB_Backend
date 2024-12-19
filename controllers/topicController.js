@@ -124,7 +124,7 @@ export const handleUpdateTopicRequest = async (req, res) => {
     const { topicId, index } = req.body; // Get topicId and index from params
 
     // Find the topic document by its ID
-    const topic = await topicModel.findOne({ _id: topicId });
+    const topic = await topicModel.findOne({ "topics._id": topicId });
 
     if (!topic) {
       return res.status(404).json({ message: "Topic document not found" });
@@ -201,7 +201,7 @@ export const handleVerifyTopicRequest = async (req, res) => {
 export const handleUpdateSuggestion = async (req, res) => {
   try {
     const { topicId, suggestion } = req.body; // Get topicId and suggestion from the request body
-
+    console.log("fghjk",topicId, suggestion)
     // Find the topic document by its ID
     const topic = await topicModel.findOne({ _id: topicId });
 
@@ -229,10 +229,11 @@ export const handleUpdateSuggestion = async (req, res) => {
 
 export const handleSubmitTopic = async (req, res) => {
   try {
-    const { topicId } = req.body; // Get topicId from the request body
-
+    const { _id } = req.body; // Get topicId from the request body
+    console.log("resqq",req.body)
+ console.log("topicId",_id)
     // Find the topic document by its ID
-    const topic = await topicModel.findById(topicId);
+    const topic = await topicModel.findById(_id);
 
     if (!topic) {
       return res.status(404).json({ message: "Topic document not found" });
