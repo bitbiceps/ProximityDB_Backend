@@ -66,7 +66,6 @@ export const handleTopicCreation = async (req, res) => {
           "Cognitive Benefits of Physical and Mental Activities",
         ];
 
-
     // Create a new Topic document with the list of generated topics
     const newTopic = await topicModel.create({
       topics: finalTopics.map((topic) => ({

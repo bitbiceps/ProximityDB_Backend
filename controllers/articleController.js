@@ -163,3 +163,31 @@ export const handleSubmitArticle = async (req, res) => {
       .json({ message: "Error submitting article", error: error.message });
   }
 };
+
+export const handleGetArticles = async (req, res) => {
+  try {
+    // Assuming userId is sent as a query parameter
+    const { userId } = req.query; // Or req.body.userId depending on how the request is made
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
+    }
+
+    // Find all articles associated with the userId
+    const articles = await articleModel.find({ userId });
+
+    if (!articles.length) {
+      return res
+        .status(404)
+        .json({ message: "No articles found for this user" });
+    }
+
+    // Return the found articles
+    return res.status(200).json({ message: "Success", articles });
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};

@@ -120,7 +120,7 @@ export const loginUser = async (req, res) => {
       message: "Login successful",
       tokens: { accessToken, refreshToken },
       userId: user._id,
-      user:user
+      user: user,
     });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });

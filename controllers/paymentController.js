@@ -80,8 +80,8 @@ export const handlePaymentWebhook = async (req, res) => {
     console.log("usersss", user);
     user.planId = changeStatus.planId;
     user.paymentStatus = true;
-    await user.save()
-    console.log("final",user)
+    await user.save();
+    console.log("final", user);
     try {
       changeStatus.status = "succeeded";
       await changeStatus.save();
