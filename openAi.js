@@ -8,10 +8,12 @@ const writer = new OpenAI({
 });
 
 const model = "ft:gpt-3.5-turbo-0613:cache-labs-llc:yt-tutorial:8hHNplz0";
+const topicModel = "gpt-3.5-turbo";
 
 const openAi = {
   writer,
   model,
+  topicModel,
 };
 
 export default openAi;

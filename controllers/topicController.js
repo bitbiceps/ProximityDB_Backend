@@ -1,6 +1,7 @@
 import OpenAI from "openai"; // Assuming you have OpenAI set up
 import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js"; // Assuming you have a topicModel
+import openAi from "../openAi.js";
 
 // const openai = new OpenAI({
 //   apiKey: process.env.OPENAI_API_KEY || "your-openai-api-key", // Your OpenAI API key here
@@ -18,52 +19,65 @@ export const handleTopicCreation = async (req, res) => {
     }
 
     if (article.topics) {
-      // Use findById to directly query by ObjectId
+      // Check if the topic already exists
       const existingTopic = await topicModel.findOne({ _id: article.topics });
 
-      // If topic found, return the topic
+      // Return the existing topic if found
       if (existingTopic) {
         return res
           .status(200)
           .json({ message: "Success", topic: existingTopic });
       }
     }
-    // Generate topics using OpenAI (or use placeholders for now)
-    // const response = await openai.chat.completions.create({
-    //   model: "gpt-3.5-turbo", // or any other model
-    //   messages: [
-    //     {
-    //       role: "system",
-    //       content:
-    //         "You are an AI that generates relevant topics based on an article's content.",
-    //     },
-    //     {
-    //       role: "user",
-    //       content: `Based on the following article, generate 3 relevant topics:
-    //       ${article.value}`, // Assuming the article value is the text content of the article
-    //     },
-    //   ],
-    //   max_tokens: 200, // Adjust token limit to ensure response is concise
-    //   temperature: 0.7, // Moderate creativity for topic generation
-    // });
 
-    // // Extract topics from the OpenAI response (if available)
-    // const generatedTopics = response.choices[0].message.content.trim().split("\n");
+    const response = await openAi.writer.chat.completions.create({
+      model: "gpt-3.5-turbo", // Or "gpt-4" if you want to use GPT-4
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an AI that generates an array of 3 relevant topics based on an article's content. Please avoid using numbers in the topics.",
+        },
+        {
+          role: "user",
+          content: `Based on the following article, generate 3 relevant 
+          -It should be list of strings for example ["topic","topic","topic"]
+          topics:\n${article.value}`, // Assuming article.value is the content
+        },
+      ],
+      max_tokens: 100, // Increase token count for longer responses
+      temperature: 0.7, // Adjust creativity level if necessary
+    });
 
-    // // If no topics are generated, fall back to placeholder topics
-    // const topicsToSave = generatedTopics.length > 0 ? generatedTopics : ["Topic 1", "Topic 2", "Topic 3"];
+    // Clean up the response: remove unwanted characters and split into topics
+    const rawTopics = response.choices[0].message.content.trim().split("\n");
+
+    const cleanedTopics = rawTopics
+      .map((line) => line.trim()) // Trim spaces
+      .filter((line) => line && !line.toLowerCase().includes("topics:")) // Remove empty or "topics:" lines
+      .map((line) => line.replace(/^[\d\-\.\s]+/, "")); // Remove leading numbers and dashes
+
+    // If no valid topics are generated, use placeholders
+    const finalTopics = cleanedTopics.length
+      ? cleanedTopics
+      : [
+          "Enhancing Memory Through Lifestyle Changes",
+          "The Impact of Sleep on Memory Consolidation",
+          "Cognitive Benefits of Physical and Mental Activities",
+        ];
+
 
     // Create a new Topic document with the list of generated topics
     const newTopic = await topicModel.create({
-      topics: [
-        { value: "Topic 1", updateRequested: false, verifyRequested: false },
-        { value: "Topic 2", updateRequested: false, verifyRequested: false },
-        { value: "Topic 3", updateRequested: false, verifyRequested: false },
-      ], // Placeholder topics for now
+      topics: finalTopics.map((topic) => ({
+        value: topic,
+        updateRequested: false,
+        verifyRequested: false,
+      })),
     });
 
     // Update the article with the newly created Topic document's _id
-    article.topics = newTopic._id; // Assuming the `topics` field in the article holds a single ObjectId
+    article.topics = newTopic._id;
     await article.save();
 
     // Find the newly created topic from the topicModel
@@ -149,10 +163,10 @@ export const handleVerifyTopicRequest = async (req, res) => {
     const { topicId, index } = req.body; // Get topicId and index from body
 
     // Find the topic document by its ID
-    console.log("topic",topicId,index)
+    console.log("topic", topicId, index);
 
     const topic = await topicModel.findOne({ "topics._id": topicId });
-    console.log("topic",topic)
+    console.log("topic", topic);
     if (!topic) {
       return res.status(404).json({ message: "Topic document not found" });
     }
