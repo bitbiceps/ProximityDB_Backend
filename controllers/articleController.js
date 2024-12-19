@@ -1,13 +1,6 @@
-import OpenAI from "openai";
+// import OpenAI from "openai";
 import articleModel from "../models/articleModels.js";
-
-// Initialize OpenAI (commented out for now)
-// const openai = new OpenAI({
-//   apiKey:
-//     process.env.OPENAI_API_KEY ||
-//     "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",
-//   // "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",
-// });
+import openAi from "../openAi.js";
 
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
@@ -58,16 +51,11 @@ const handleCreateArticles = async (body) => {
     question8,
   } = body;
 
-  // Custom fine-tuned model (commented out, as OpenAI API call is now disabled)
-  // const model = "ft:gpt-3.5-turbo-0613:cache-labs-llc:yt-tutorial:8hHNplz0";
-
   try {
     // Generate articles based on the questionnaire (using dummy data)
     for (let i = 0; i < numberOfArticles; i++) {
-      // Comment out the OpenAI API call for now
-      /*
-      const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo", // Default model
+      const response = await openAi.writer.chat.completions.create({
+        model: openAi.model, // Default model
         messages: [
           {
             role: "system",
@@ -100,10 +88,6 @@ const handleCreateArticles = async (body) => {
 
       // Extract the generated content
       const generatedContent = response.choices[0].message.content.trim();
-      */
-
-      // Use dummy content for now
-      const generatedContent = `OpenAI is an artificial intelligence research organization that aims to develop advanced AI technologies that benefit humanity. Founded by notable figures like Elon Musk and Sam Altman, OpenAI is focused on creating AI systems that are safe, transparent, and aligned with human values. One of its most well-known creations is GPT-3, a language model capable of understanding and generating human-like text. OpenAI is dedicated to ensuring that AI technologies are used responsibly and are accessible to everyone, helping solve complex global challenges and enhancing various industries through the power of artificial intelligence.`;
 
       // Create a new article with the dummy content
       const newArticle = {

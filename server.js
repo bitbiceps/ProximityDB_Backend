@@ -1,5 +1,6 @@
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
@@ -7,8 +8,6 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import articleRouter from "./routes/articleRoutes.js";
 import webhookRouter from "./routes/webhookRoutes.js";
 import topicRouter from "./routes/topicRoutes.js";
-
-dotenv.config({ path: ".env" });
 
 const app = express();
 
@@ -33,8 +32,6 @@ app.get("/", async (req, res) => {
     message: "Server is running successfully",
   });
 });
-
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
