@@ -16,7 +16,7 @@ mongoose
   .then(() => console.log("Database connected successfully!!"))
   .catch((err) => console.log("Error connecting to database", err));
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "*" }));
 
 app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 app.use("/pay", express.json(), paymentRoutes);
