@@ -26,8 +26,10 @@ export const createPayment = async (req, res) => {
       amount,
       currency: "inr",
       metadata: { userId },
-    });
+      capture_method: "automatic", // Ensures automatic confirmation and capture
 
+    });
+   console.log("paymentIntent",paymentIntent)
     const order = new Payment({
       userId,
       amount,
@@ -41,6 +43,7 @@ export const createPayment = async (req, res) => {
       message: "Order created successfully",
       clientSecret: paymentIntent.client_secret,
       orderId: order._id,
+      order: order,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -64,24 +67,23 @@ export const handlePaymentWebhook = async (req, res) => {
     }
   } catch (err) {
     console.log("=err", err);
-
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
-  console.log("event.tu", event.type);
+  console.log("event.tu", event);
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object;
     console.log("paymentIntent", paymentIntent.status, paymentIntent.id);
     const changeStatus = await Payment.findOne({
       paymentIntentId: paymentIntent.id,
     });
-    console.log("change", changeStatus);
-    const user = await User.findById(changeStatus.userId);
-    console.log("usersss", user);
-    user.planId = changeStatus.planId;
+    // console.log("change", changeStatus);
+    const user = await User.findById(changeStatus?.userId);
+    // console.log("usersss", user);
+    user.planId = changeStatus?.planId;
     user.paymentStatus = true;
-    await user.save()
-    console.log("final",user)
+    await user.save();
+    console.log("final", user);
     try {
       changeStatus.status = "succeeded";
       await changeStatus.save();
