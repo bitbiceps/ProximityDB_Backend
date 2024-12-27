@@ -1,11 +1,7 @@
-import OpenAI from "openai"; // Assuming you have OpenAI set up
 import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js"; // Assuming you have a topicModel
 import openAi from "../openAi.js";
 
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY || "your-openai-api-key", // Your OpenAI API key here
-// });
 
 export const handleTopicCreation = async (req, res) => {
   try {

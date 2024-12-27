@@ -10,12 +10,11 @@ const articleSchema = new mongoose.Schema(
       default: "",
     },
 
-    // Boolean to track if the article has been submitted
-    submitted: {
-      type: Boolean,
-      default: false,
+    // Status to track the article submission state
+    status: {
+      type: String,
+      default: "pending", // default value set to 'pending'
     },
-
     // Reference to a single Topic document (ObjectId or null)
     topics: {
       type: mongoose.Schema.Types.ObjectId,
