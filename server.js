@@ -7,6 +7,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import articleRouter from "./routes/articleRoutes.js";
 import webhookRouter from "./routes/webhookRoutes.js";
 import topicRouter from "./routes/topicRoutes.js";
+import internalRouter from "./routes/internalRoutes.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/pay", express.json(), paymentRoutes);
 app.use("/api/auth", express.json(), authRoutes);
 app.use("/article", express.json(), articleRouter);
 app.use("/topic", express.json(), topicRouter);
+app.use("/internal", express.json(), internalRouter);
 
 app.get("/", async (req, res) => {
   return res.status(200).json({ message: "Server working successfully" });
