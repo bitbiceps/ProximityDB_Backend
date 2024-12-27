@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
-
+import Article from "../models/articleModels.js";
 import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -24,14 +24,15 @@ export const registerUser = async (req, res) => {
 
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      return res.status(400).json({ message: "Email is already registered." });
+      console.log("eeeeee",existingEmail)
+      return res.status(400).json({ message: "Email is already registered" });
     }
 
     const existingPhoneNumber = await User.findOne({ phoneNumber });
     if (existingPhoneNumber) {
       return res
         .status(400)
-        .json({ message: "Phone number is already registered." });
+        .json({ message: "Phone number is already registered" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -77,7 +78,7 @@ export const verifyEmail = async (req, res) => {
     if (user.isVerified) {
       return res.status(400).json({ message: "User already verified" });
     }
-    console.log("user", user);
+    // console.log("user", user);
     user.isVerified = true;
     console.log("userStatus", user.isVerified);
     await user.save();
@@ -94,7 +95,8 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log("reqqq", req.body);
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate("articles");
+
     if (!user) {
       return res.status(400).json({ message: "Invalid email" });
     }
@@ -113,7 +115,7 @@ export const loginUser = async (req, res) => {
     const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "2h",
     });
-    console.log("tok", accessToken);
+    // console.log("tok", accessToken);
 
     const refreshToken = "";
     res.status(200).json({
@@ -124,5 +126,32 @@ export const loginUser = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });
+  }
+};
+export const getUserArticles = async (req, res) => {
+  try {
+    const { userId } = req.params; // User ID should be passed as a parameter
+    // console.log("artttttttttttt", userId);
+
+    // Fetch the user and populate their articles
+    const user = await User.findById(userId).populate("articles");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Fetch updated articles
+    // const updatedArticles = user.articles.filter(
+    //   (article) => article.isUpdated
+    // );
+
+    res.status(200).json({
+      message: "UPdated Articles fetched successfully",
+      articles: user,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching articles", error: error.message });
   }
 };
