@@ -1,84 +1,89 @@
 import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js"; // Assuming you have a topicModel
 import openAi from "../openAi.js";
-
+import { articleStatus } from "../utils.js";
 
 export const handleTopicCreation = async (req, res) => {
   try {
-    const { articleId } = req.body;
+    const {
+      numberOfArticles,
+      userId,
+      question1,
+      question2,
+      question3,
+      question4,
+      question5,
+      question6,
+      question7,
+      question8,
+    } = req.body;
 
     // Find the article by ID
-    const article = await articleModel.findOne({ _id: articleId });
+    const topic = await topicModel.find({ userId });
 
-    if (!article) {
-      return res.status(404).json({ message: "Article not found" });
+    if (topic.length) {
+      return res.status(200).json({ message: "Topics found", data: topic });
     }
 
-    if (article.topics) {
-      // Check if the topic already exists
-      const existingTopic = await topicModel.findOne({ _id: article.topics });
+    for (let i = 0; i < numberOfArticles; i++) {
+      const response = await openAi.writer.chat.completions.create({
+        model: "gpt-3.5-turbo", // Or "gpt-4" if you want to use GPT-4
+        messages: [
+          {
+            role: "system",
+            content: `You are an AI that generates an array of 3 relevant topics based on an questions content. Please avoid using numbers in the topics.
+                Question 1: ${question1}
+              Question 2: ${question2}
+              Question 3: ${question3}
+              Question 4: ${question4}
+              Question 5: ${question5}
+              Question 6: ${question6}
+              Question 7: ${question7}
+              Question 8: ${question8}
+              `,
+          },
+          {
+            role: "user",
+            content: `Based on the following questions, generate 3 relevant 
+        -It should be list of strings for example ["topic","topic","topic"]
+        topics`, // Assuming article.value is the content
+          },
+        ],
+        max_tokens: 100, // Increase token count for longer responses
+        temperature: 0.7, // Adjust creativity level if necessary
+      });
 
-      // Return the existing topic if found
-      if (existingTopic) {
-        return res
-          .status(200)
-          .json({ message: "Success", topic: existingTopic });
-      }
+      // Clean up the response: remove unwanted characters and split into topics
+      const rawTopics = response.choices[0].message.content.trim().split("\n");
+
+      const cleanedTopics = rawTopics
+        .map((line) => line.trim()) // Trim spaces
+        .filter((line) => line && !line.toLowerCase().includes("topics:")) // Remove empty or "topics:" lines
+        .map((line) => line.replace(/^[\d\-\.\s]+/, "")); // Remove leading numbers and dashes
+
+      // If no valid topics are generated, use placeholders
+      const finalTopics = cleanedTopics.length
+        ? cleanedTopics
+        : [
+            "Enhancing Memory Through Lifestyle Changes",
+            "The Impact of Sleep on Memory Consolidation",
+            "Cognitive Benefits of Physical and Mental Activities",
+          ];
+
+      await topicModel.create({
+        userId,
+        topics: JSON.parse(finalTopics[0]).map((topic) => ({
+          value: topic,
+          updateRequested: false,
+          verifyRequested: false,
+        })),
+      });
     }
-
-    const response = await openAi.writer.chat.completions.create({
-      model: "gpt-3.5-turbo", // Or "gpt-4" if you want to use GPT-4
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an AI that generates an array of 3 relevant topics based on an article's content. Please avoid using numbers in the topics.",
-        },
-        {
-          role: "user",
-          content: `Based on the following article, generate 3 relevant 
-          -It should be list of strings for example ["topic","topic","topic"]
-          topics:\n${article.value}`, // Assuming article.value is the content
-        },
-      ],
-      max_tokens: 100, // Increase token count for longer responses
-      temperature: 0.7, // Adjust creativity level if necessary
-    });
-
-    // Clean up the response: remove unwanted characters and split into topics
-    const rawTopics = response.choices[0].message.content.trim().split("\n");
-
-    const cleanedTopics = rawTopics
-      .map((line) => line.trim()) // Trim spaces
-      .filter((line) => line && !line.toLowerCase().includes("topics:")) // Remove empty or "topics:" lines
-      .map((line) => line.replace(/^[\d\-\.\s]+/, "")); // Remove leading numbers and dashes
-
-    // If no valid topics are generated, use placeholders
-    const finalTopics = cleanedTopics.length
-      ? cleanedTopics
-      : [
-          "Enhancing Memory Through Lifestyle Changes",
-          "The Impact of Sleep on Memory Consolidation",
-          "Cognitive Benefits of Physical and Mental Activities",
-        ];
-
-    // Create a new Topic document with the list of generated topics
-    const newTopic = await topicModel.create({
-      topics: finalTopics.map((topic) => ({
-        value: topic,
-        updateRequested: false,
-        verifyRequested: false,
-      })),
-    });
-
-    // Update the article with the newly created Topic document's _id
-    article.topics = newTopic._id;
-    await article.save();
 
     // Find the newly created topic from the topicModel
-    const newTopicDetails = await topicModel.findById(newTopic._id);
+    const newTopicDetails = await topicModel.find({ userId });
 
-    return res.status(200).json({ message: "Success", topic: newTopicDetails });
+    return res.status(200).json({ message: "Success", data: newTopicDetails });
   } catch (error) {
     console.error(error.message);
     return res
@@ -196,7 +201,7 @@ export const handleVerifyTopicRequest = async (req, res) => {
 export const handleUpdateSuggestion = async (req, res) => {
   try {
     const { topicId, suggestion } = req.body; // Get topicId and suggestion from the request body
-    console.log("fghjk",topicId, suggestion)
+    console.log("fghjk", topicId, suggestion);
     // Find the topic document by its ID
     const topic = await topicModel.findOne({ _id: topicId });
 
@@ -225,9 +230,6 @@ export const handleUpdateSuggestion = async (req, res) => {
 export const handleSubmitTopic = async (req, res) => {
   try {
     const { _id } = req.body; // Get topicId from the request body
-    console.log("resqq",req.body)
- console.log("topicId",_id)
-    // Find the topic document by its ID
     const topic = await topicModel.findById(_id);
 
     if (!topic) {
@@ -235,7 +237,7 @@ export const handleSubmitTopic = async (req, res) => {
     }
 
     // Set the `submitted` field to `true`
-    topic.submitted = true;
+    topic.status = articleStatus.inReview;
 
     // Reset the `updateRequested` and `verifyRequested` fields for all topics in the `topics` array
     topic.topics.forEach((t) => {

@@ -15,15 +15,29 @@ const topicSchema = new mongoose.Schema(
       default: [],
     },
 
-    // Boolean to track if the article has been submitted
-    submitted: {
-      type: Boolean,
-      default: false,
+    status: {
+      type: String,
+      default: "pending", // default value set to 'pending'
     },
 
     // Suggestion as a plain object
     suggestion: {
       type: String,
+      default: null,
+    },
+    // Suggestion as a plain object
+    finalTopic: {
+      type: String,
+      default: null,
+    },
+
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Reference to the Topic model/collection
+    },
+    articleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Article", // Reference to the Topic model/collection
       default: null,
     },
   },

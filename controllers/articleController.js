@@ -164,35 +164,7 @@ export const handleSubmitArticle = async (req, res) => {
   }
 };
 
-export const handleArticleMarkCompleted = async (req, res) => {
-  try {
-    const { articleId } = req.body; // Get articleId from the request parameters
 
-    // Find the article document by its ID
-    const article = await articleModel.findOne({ _id: articleId });
-
-    if (!article) {
-      return res.status(404).json({ message: "Article not found" });
-    }
-
-    // Set the `submitted` field to true and `updateRequested` to false
-    article.status = "completed";
-    article.updateRequested = false;
-
-    // Save the updated article
-    await article.save();
-
-    return res.status(200).json({
-      message: "Article marked completed",
-      updatedArticle: article, // Return the updated article document
-    });
-  } catch (error) {
-    console.error("Error submitting article:", error);
-    return res
-      .status(500)
-      .json({ message: "Error submitting article", error: error.message });
-  }
-};
 
 export const handleGetArticles = async (req, res) => {
   try {
