@@ -124,23 +124,30 @@ export const handleCreateArticles = async (req, res) => {
   const { topicId } = req.body;
   console.log(topicId, "fghj");
 
+  const saveArticles = await articleModel.findOne({ topicId });
+  console.log("save1", saveArticles);
+
   try {
     // Generate articles based on the questionnaire (using dummy data)
     // for (let i = 0; i < numberOfArticles; i++) {
-    const article = await topicModel.findOne({ _id: topicId });
-    console.log("art", article);
-    let t = "hello kaif is here";
-    const response = await openAi.writer.chat.completions.create({
-      model: openAi.model, // Default model
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an AI article writer. Please generate a well-structured article that answers the given questionnaire questions. The article should be informative and engaging, without HTML tags.",
-        },
-        {
-          role: "user",
-          content: `
+    if (saveArticles) {
+      console.log("saved", saveArticles);
+      return res.status(200).json(saveArticles);
+    } else {
+      const article = await topicModel.findOne({ _id: topicId });
+      console.log("art", article);
+      let t = "hello kaif is here";
+      const response = await openAi.writer.chat.completions.create({
+        model: openAi.model, // Default model
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an AI article writer. Please generate a well-structured article that answers the given questionnaire questions. The article should be informative and engaging, without HTML tags.",
+          },
+          {
+            role: "user",
+            content: `
               Generate a detailed article based on the following questionnaire:
              Topic: ${article.finalTopic}
 
@@ -149,29 +156,31 @@ export const handleCreateArticles = async (req, res) => {
               - Avoid using HTML tags.
               - Ensure readability and coherence.
             `,
-        },
-      ],
-      max_tokens: 800, // Limit tokens to ensure content length
-      temperature: 0.7, // Medium creativity and coherence
-    });
+          },
+        ],
+        max_tokens: 800, // Limit tokens to ensure content length
+        temperature: 0.7, // Medium creativity and coherence
+      });
 
-    // Extract the generated content
-    const generatedContent = response.choices[0].message.content.trim();
+      // Extract the generated content
+      const generatedContent = response.choices[0].message.content.trim();
 
-    // Create a new article with the dummy content
-    const newArticle = {
-      value: generatedContent,
-      topicId: topicId, // Associate the article with the user
-    };
+      // Create a new article with the dummy content
+      const newArticle = {
+        value: generatedContent,
+        topicId: topicId, // Associate the article with the user
+      };
 
-    // Save the new article in the database
-    await articleModel.create(newArticle);
-    const newarticle = await articleModel
-      .findOne({ _id: topicId })
-      .select("_id status");
-    console.log("newA", newArticle, newArticle._id, newArticle.status);
-    return res.status(200).json(newarticle);
-    // }
+      // Save the new article in the database
+      await articleModel.create(newArticle);
+
+      const newObj = await articleModel.findOne({ topicId });
+      article.articleId = newObj._id;
+      await article.save();
+      console.log("newA", newObj, newObj._id, newObj.status);
+      return res.status(200).json(newObj);
+      // }
+    }
   } catch (error) {
     console.error("Error generating articles:", error);
     throw new Error("Error generating articles with OpenAI");
@@ -211,9 +220,9 @@ export const handleArticleUpdateRequested = async (req, res) => {
 export const handleSubmitArticle = async (req, res) => {
   try {
     const { articleId } = req.body; // Get articleId from the request parameters
-
     // Find the article document by its ID
     const article = await articleModel.findOne({ _id: articleId });
+    const topic = await topicModel.findOne({ articleId });
 
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
@@ -222,10 +231,10 @@ export const handleSubmitArticle = async (req, res) => {
     // Set the submitted field to true and updateRequested to false
     article.status = "review";
     article.updateRequested = false;
-
+    topic.articleStatus = "review";
     // Save the updated article
     await article.save();
-
+    await topic.save();
     return res.status(200).json({
       message: "Article submitted for review",
       updatedArticle: article, // Return the updated article document

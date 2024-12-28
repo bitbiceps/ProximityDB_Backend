@@ -30,7 +30,10 @@ const topicSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-
+    articleStatus: {
+      type: String,
+      default: "pending",
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Reference to the Topic model/collection
