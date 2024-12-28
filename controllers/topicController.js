@@ -262,3 +262,16 @@ export const handleSubmitTopic = async (req, res) => {
       .json({ message: "Error submitting topic", error: error.message });
   }
 };
+
+export const getAllTopics = async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const topics = await topicModel.find({ userId });
+    if (topics) {
+      return res.status(200).json({ message: "Topics Found", data: topics });
+    }
+    throw new Error("No Topic Found For This User");
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
