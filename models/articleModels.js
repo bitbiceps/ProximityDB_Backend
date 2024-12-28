@@ -3,10 +3,9 @@ import mongoose from "mongoose";
 // Define the Article schema
 const articleSchema = new mongoose.Schema(
   {
-    // Content of the article
+    // // Content of the article
     value: {
       type: String,
-      required: true,
       default: "",
     },
 
@@ -15,12 +14,13 @@ const articleSchema = new mongoose.Schema(
       type: String,
       default: "pending", // default value set to 'pending'
     },
+
     // Reference to a single Topic document (ObjectId or null)
-    topics: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Topic", // Reference to the Topic model/collection
-      default: null, // Default is null, meaning no topic is associated initially
-    },
+    // topics: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Topic", // Reference to the Topic model/collection
+    //   default: null, // Default is null, meaning no topic is associated initially
+    // },
 
     // Photo related to the article, initially null
     photo: {
@@ -35,10 +35,10 @@ const articleSchema = new mongoose.Schema(
       default: false,
     },
 
-    // Reference to the User document
-    userId: {
+    // // Reference to the User document
+    topicId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Reference to the User model/collection
+      ref: "Topic", // Reference to the User model/collection
       required: true, // Ensures every article is associated with a user
     },
   },

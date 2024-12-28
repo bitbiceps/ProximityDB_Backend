@@ -16,8 +16,8 @@ const userSchema = new mongoose.Schema(
 );
 
 // Virtual field to populate articles associated with the user
-userSchema.virtual("articles", {
-  ref: "Article", // The model to use (ensure Article is registered in Mongoose)
+userSchema.virtual("topics", {
+  ref: "Topic", // The model to use (ensure Article is registered in Mongoose)
   localField: "_id", // Field in the User model
   foreignField: "userId", // Field in the Article model
 });

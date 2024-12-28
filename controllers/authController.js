@@ -24,7 +24,7 @@ export const registerUser = async (req, res) => {
 
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      console.log("eeeeee",existingEmail)
+      console.log("eeeeee", existingEmail);
       return res.status(400).json({ message: "Email is already registered" });
     }
 
@@ -95,8 +95,8 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log("reqqq", req.body);
-    const user = await User.findOne({ email }).populate("articles");
-
+    const user = await User.findOne({ email }).populate("topics");
+    console.log("user",user)
     if (!user) {
       return res.status(400).json({ message: "Invalid email" });
     }
