@@ -16,6 +16,13 @@ export const handleTopicCreation = async (req, res) => {
       question6,
       question7,
       question8,
+      question9,
+      question10,
+      question11,
+      question12,
+      question13,
+      question14,
+      question15,
     } = req.body;
 
     // Find the article by ID
@@ -24,7 +31,7 @@ export const handleTopicCreation = async (req, res) => {
     if (topic.length) {
       return res.status(200).json({ message: "Topics found", data: topic });
     }
-
+    console.log("numberrrrr", numberOfArticles, userId);
     for (let i = 0; i < numberOfArticles; i++) {
       const response = await openAi.writer.chat.completions.create({
         model: "gpt-3.5-turbo", // Or "gpt-4" if you want to use GPT-4
@@ -40,6 +47,13 @@ export const handleTopicCreation = async (req, res) => {
               Question 6: ${question6}
               Question 7: ${question7}
               Question 8: ${question8}
+              Question 9: ${question9}
+               Question 10: ${question10}
+                Question 11: ${question11}
+                 Question 12: ${question12}
+                  Question 13: ${question13}
+                   Question 14: ${question14}
+                    Question 15: ${question15}
               `,
           },
           {
