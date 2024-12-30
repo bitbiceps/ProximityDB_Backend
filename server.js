@@ -11,8 +11,8 @@ import internalRouter from "./routes/internalRoutes.js";
 
 const app = express();
 
-// const db = process.env.DB.replace("<db_password>", process.env.password);
-const db = process.env.DB;
+const db = process.env.DB.replace("<db_password>", process.env.password);
+// const db = process.env.DB;
 mongoose
   .connect(db)
   .then(() => console.log("Database connected successfully!!"))

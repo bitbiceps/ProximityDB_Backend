@@ -7,7 +7,7 @@ import {
 
 const internalRouter = Router();
 
-internalRouter.get("/all", handleGetAllCount);
+internalRouter.get("/stats", handleGetAllCount);
 internalRouter.patch("/complete-article", handleArticleMarkCompleted);
 internalRouter.patch("/complete-topic", handleTopicMarkCompleted);
 

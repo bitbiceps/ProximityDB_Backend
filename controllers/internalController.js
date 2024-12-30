@@ -4,18 +4,28 @@ import { articleStatus } from "../utils.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
-    // Aggregation to count documents by status
+    // Aggregation to count documents by status from both articleModel and topicModel
     const statusCounts = await articleModel.aggregate([
+      // Combine with topicModel collection
+      {
+        $unionWith: {
+          coll: "topics", // Correct the name of the collection (ensure it is lowercase if it's `topics`)
+        },
+      },
       {
         $group: {
-          _id: "$status", // Group by 'status' field
-          count: { $sum: 1 }, // Sum the count for each status
+          _id: "$status", // Group by the 'status' field
+          count: { $sum: 1 }, // Count the documents for each status
         },
       },
     ]);
 
-    // Initialize the response object
-    const count = {};
+    // Initialize the response object with default values
+    const count = {
+      pending: { count: 0, rise: 8.5 },
+      review: { count: 0, rise: 8.5 },
+      completed: { count: 0, rise: 8.5 },
+    };
 
     // Default rise value
     const riseValue = 8.5;
@@ -32,15 +42,17 @@ export const handleGetAllCount = async (req, res) => {
     });
 
     // Send back the result as a JSON response
-    return res
-      .status(200)
-      .json({ message: "Success Fetching Article Stats", data: count });
+    return res.status(200).json({
+      message: "Success Fetching Article and Topic Stats",
+      data: count,
+    });
   } catch (error) {
     // Log the error and respond with a failure message
-    console.error("Error fetching article counts:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error fetching article and topic counts:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
