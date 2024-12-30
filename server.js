@@ -14,7 +14,9 @@ const app = express();
 const db = process.env.DB.replace("<db_password>", process.env.password);
 // const db = process.env.DB;
 mongoose
-  .connect(db)
+  .connect(db, {
+    serverSelectionTimeoutMS: 5000, // 5 seconds
+  })
   .then(() => console.log("Database connected successfully!!"))
   .catch((err) => console.log("Error connecting to database", err));
 

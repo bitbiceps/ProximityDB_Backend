@@ -1,5 +1,6 @@
 import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js";
+import userModel from "../models/userModel.js";
 import { articleStatus } from "../utils.js";
 
 export const handleGetAllCount = async (req, res) => {
@@ -55,6 +56,48 @@ export const handleGetAllCount = async (req, res) => {
     });
   }
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get the total number of users using the faster estimatedDocumentCount
+    const totalUsers = await userModel.estimatedDocumentCount();
+
+    // Fetch users based on page and limit using range-based pagination
+    let users;
+    if (page > 1) {
+      const lastUser = await userModel.find().sort({ _id: -1 }).skip((page - 2) * limit).limit(1);
+      if (lastUser.length > 0) {
+        const lastUserId = lastUser[0]._id;
+        users = await userModel.find({ _id: { $gt: lastUserId } }).limit(limit);
+      }
+    } else {
+      users = await userModel.find().limit(limit);
+    }
+
+    if (users.length > 0) {
+      return res.status(200).json({
+        message: "Successful",
+        users,
+        pagination: {
+          totalUsers,
+          currentPage: page,
+          totalPages: Math.ceil(totalUsers / limit),
+          pageSize: limit
+        }
+      });
+    }
+
+    throw new Error("No users found");
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 
 export const handleArticleMarkCompleted = async (req, res) => {
   try {
