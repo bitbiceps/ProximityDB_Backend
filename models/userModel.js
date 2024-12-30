@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
     paymentStatus: { type: Boolean, default: false },
     termsAccepted: { type: Boolean, required: true },
     isVerified: { type: Boolean, default: false },
+    status: { type: String, default: "pending" },
   },
   { timestamps: true }
 );

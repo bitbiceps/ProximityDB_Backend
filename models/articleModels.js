@@ -16,11 +16,10 @@ const articleSchema = new mongoose.Schema(
     },
 
     // Reference to a single Topic document (ObjectId or null)
-    // topics: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Topic", // Reference to the Topic model/collection
-    //   default: null, // Default is null, meaning no topic is associated initially
-    // },
+    topics: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Reference to the Topic model/collection
+    },
 
     // Photo related to the article, initially null
     photo: {

@@ -69,7 +69,11 @@ export const getAllUsers = async (req, res) => {
     // Fetch users based on page and limit using range-based pagination
     let users;
     if (page > 1) {
-      const lastUser = await userModel.find().sort({ _id: -1 }).skip((page - 2) * limit).limit(1);
+      const lastUser = await userModel
+        .find()
+        .sort({ _id: -1 })
+        .skip((page - 2) * limit)
+        .limit(1);
       if (lastUser.length > 0) {
         const lastUserId = lastUser[0]._id;
         users = await userModel.find({ _id: { $gt: lastUserId } }).limit(limit);
@@ -86,8 +90,8 @@ export const getAllUsers = async (req, res) => {
           totalUsers,
           currentPage: page,
           totalPages: Math.ceil(totalUsers / limit),
-          pageSize: limit
-        }
+          pageSize: limit,
+        },
       });
     }
 
@@ -98,6 +102,33 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+export const getReviewCounts = async (req, res) => {
+  try {
+    const { userId } = req.query;
+    // Get the count of articles with status "review"
+    const articlesInReview = await articleModel.find({
+      userId,
+    });
+
+    // Get the count of topics with status "review"
+    const topicsInReview = await topicModel.find({
+      userId,
+    });
+
+    return res.status(200).json({
+      message: "Counts fetched successfully",
+      count:
+        parseInt(articlesInReview.length) + parseInt(topicsInReview.length),
+      topics: topicsInReview,
+      article: articlesInReview,
+    });
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+    return res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
 
 export const handleArticleMarkCompleted = async (req, res) => {
   try {
@@ -131,30 +162,40 @@ export const handleArticleMarkCompleted = async (req, res) => {
 
 export const handleTopicMarkCompleted = async (req, res) => {
   try {
-    const { _id, index } = req.body; // Get articleId from the request parameters
+    const { _id, index } = req.body; // Get the topic _id and index from the request body
 
-    // Find the article document by its ID
-    const topic = await topicModel.findById({ _id });
+    // Find the topic document by its _id
+    const topic = await topicModel.findById(_id);
 
     if (!topic) {
       return res.status(404).json({ message: "Topic not found" });
     }
 
-    // Set the `submitted` field to true and `updateRequested` to false
-    topic.status = articleStatus.completed;
-    topic.finalTopic = index;
+    // Check if the provided index is valid
+    if (index < 0 || index >= topic.topics.length) {
+      return res.status(400).json({ message: "Invalid index provided" });
+    }
 
-    // Save the updated article
+    // Update the topic's status to "completed"
+    topic.status = "completed"; // Or any status you want
+
+    // Set the finalTopic to the value of the topic at the given index
+    topic.finalTopic = topic.topics[index].value;
+
+    // Save the updated topic document
     await topic.save();
 
     return res.status(200).json({
-      message: "Topic marked completed",
-      data: topic, // Return the updated article document
+      message: "Topic marked as completed",
+      data: topic, // Return the updated topic document
     });
   } catch (error) {
-    console.error("Error submitting topic:", error);
-    return res
-      .status(500)
-      .json({ message: "Error submitting topic", error: error.message });
+    console.error("Error marking topic as completed:", error);
+    return res.status(500).json({
+      message: "Error marking topic as completed",
+      error: error.message,
+    });
   }
 };
+
+
