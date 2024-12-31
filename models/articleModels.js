@@ -40,6 +40,10 @@ const articleSchema = new mongoose.Schema(
       ref: "Topic", // Reference to the User model/collection
       required: true, // Ensures every article is associated with a user
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Reference to the Topic model/collection
+    },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields
 );

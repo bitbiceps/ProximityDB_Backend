@@ -34,74 +34,6 @@ export const handleQuestionnaire = async (req, res) => {
     });
   }
 };
-
-// Function to create articles (with OpenAI part commented and using dummy content)
-// const handleCreateArticles = async (body) => {
-//   const {
-//     numberOfArticles,
-//     userId,
-//     question1,
-//     question2,
-//     question3,
-//     question4,
-//     question5,
-//     question6,
-//     question7,
-//     question8,
-//   } = body;
-
-//   try {
-//     // Generate articles based on the questionnaire (using dummy data)
-//     for (let i = 0; i < numberOfArticles; i++) {
-//       const response = await openAi.writer.chat.completions.create({
-//         model: openAi.model, // Default model
-//         messages: [
-//           {
-//             role: "system",
-//             content:
-//               "You are an AI article writer. Please generate a well-structured article that answers the given questionnaire questions. The article should be informative and engaging, without HTML tags.",
-//           },
-//           {
-//             role: "user",
-//             content: `
-//               Generate a detailed article based on the following questionnaire:
-//               Question 1: ${question1}
-//               Question 2: ${question2}
-//               Question 3: ${question3}
-//               Question 4: ${question4}
-//               Question 5: ${question5}
-//               Question 6: ${question6}
-//               Question 7: ${question7}
-//               Question 8: ${question8}
-
-//               The article should include:
-//               - A well-organized body content with relevant details.
-//               - Avoid using HTML tags.
-//               - Ensure readability and coherence.
-//             `,
-//           },
-//         ],
-//         max_tokens: 800, // Limit tokens to ensure content length
-//         temperature: 0.7, // Medium creativity and coherence
-//       });
-
-//       // Extract the generated content
-//       const generatedContent = response.choices[0].message.content.trim();
-
-//       // Create a new article with the dummy content
-//       const newArticle = {
-//         value: generatedContent,
-//         userId: userId, // Associate the article with the user
-//       };
-
-//       // Save the new article in the database
-//       await articleModel.create(newArticle);
-//     }
-//   } catch (error) {
-//     console.error("Error generating articles:", error);
-//     throw new Error("Error generating articles with OpenAI");
-//   }
-// };
 export const handleGetApprovedTopics = async (req, res) => {
   const { userId } = req.body;
 
@@ -121,17 +53,14 @@ export const handleGetApprovedTopics = async (req, res) => {
 };
 
 export const handleCreateArticles = async (req, res) => {
-  const { topicId } = req.body;
-  console.log(topicId, "fghj");
+  const { _id: topicId, userId } = req.body;
 
   const saveArticles = await articleModel.findOne({ topicId });
-  console.log("save1", saveArticles);
 
   try {
     // Generate articles based on the questionnaire (using dummy data)
     // for (let i = 0; i < numberOfArticles; i++) {
-    if (saveArticles) {
-      console.log("saved", saveArticles);
+    if (saveArticles && saveArticles?.value != "") {
       return res.status(200).json(saveArticles);
     } else {
       const article = await topicModel.findOne({ _id: topicId });
@@ -169,6 +98,7 @@ export const handleCreateArticles = async (req, res) => {
       const newArticle = {
         value: generatedContent,
         topicId: topicId, // Associate the article with the user
+        userId,
       };
 
       // Save the new article in the database
