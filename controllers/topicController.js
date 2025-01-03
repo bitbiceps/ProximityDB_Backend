@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js"; // Assuming you have a topicModel
 import openAi from "../openAi.js";
@@ -276,3 +277,84 @@ export const getAllTopics = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const handleTopicUpdate = async (req, res) => {
+  try {
+    const { topicId, index } = req.body;
+
+    // Validate topicId (if you want to ensure it is a valid ObjectId format)
+    if (!mongoose.Types.ObjectId.isValid(topicId)) {
+      return res.status(400).json({ message: "Invalid topic ID" });
+    }
+
+    // Find the topic by ID
+    const topic = await topicModel.findById(topicId);
+
+    if (!topic) {
+      return res.status(404).json({ message: "Topic not found" });
+    }
+
+    // Extract the current topics
+    const currentTopics = topic.topics;
+
+    // Check if the index is valid
+    if (index < 0 || index >= currentTopics.length) {
+      return res.status(400).json({ message: "Invalid index" });
+    }
+
+    // Check if the topic is already marked for update
+    if (currentTopics[index].updateRequested) {
+      throw new Error("You can only update the topic once");
+    }
+
+    // Prepare the request for new suggested topics
+    const response = await openAi.writer.chat.completions.create({
+      model: "gpt-3.5-turbo", // Or "gpt-4" if you want to use GPT-4
+      messages: [
+        {
+          role: "system",
+          content: `You are an AI that generates a relevant topic based on the following content:
+            Current Topic: ${currentTopics[index].value}`,
+        },
+        {
+          role: "user",
+          content: "Generate one new relevant 3 to 4 words topic to replace the current topic.  avoid using Topic:",
+        },
+      ],
+      max_tokens: 50, // Increase token count for longer responses
+      temperature: 0.7, // Adjust creativity level if necessary
+    });
+
+    // Clean up the response: remove unwanted characters and extract only the topic name
+    const newTopic = response.choices[0].message.content.trim();
+
+    // Remove the prefix "New Topic: " if it exists
+    const cleanTopic = newTopic.replace(/^New Topic:\s*/, "");
+
+    if (!cleanTopic) {
+      return res
+        .status(500)
+        .json({ message: "Failed to generate a new topic" });
+    }
+
+    // Replace the old topic with the new one at the provided index
+    currentTopics[index].value = cleanTopic;
+
+    // Mark the topic as updated by setting `updateRequested` to true
+    currentTopics[index].updateRequested = true;
+
+    // Update the topic document in the database
+    topic.topics = currentTopics;
+    await topic.save();
+
+    return res
+      .status(200)
+      .json({ message: "Topic updated successfully", data: topic });
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
