@@ -136,7 +136,7 @@ export const handleArticleMarkCompleted = async (req, res) => {
 
     // Find the article document by its ID
     const article = await articleModel.findOne({ _id: articleId });
-
+    const topic = await topicModel.findOne({ articleId });
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
@@ -144,8 +144,9 @@ export const handleArticleMarkCompleted = async (req, res) => {
     // Set the `submitted` field to true and `updateRequested` to false
     article.status = articleStatus.completed;
     article.updateRequested = false;
-
+    topic.articleStatus = "completed";
     // Save the updated article
+    await topic.save();
     await article.save();
 
     return res.status(200).json({
@@ -175,12 +176,12 @@ export const handleTopicMarkCompleted = async (req, res) => {
     if (index < 0 || index >= topic.topics.length) {
       return res.status(400).json({ message: "Invalid index provided" });
     }
-
     // Update the topic's status to "completed"
     topic.status = "completed"; // Or any status you want
 
     // Set the finalTopic to the value of the topic at the given index
     topic.finalTopic = topic.topics[index].value;
+    console.log("topo",topic)
 
     // Save the updated topic document
     await topic.save();
@@ -197,5 +198,3 @@ export const handleTopicMarkCompleted = async (req, res) => {
     });
   }
 };
-
-
