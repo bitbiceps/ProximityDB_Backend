@@ -12,18 +12,18 @@ const userSchema = new mongoose.Schema(
     termsAccepted: { type: Boolean, required: true },
     isVerified: { type: Boolean, default: false },
     status: { type: String, default: "pending" },
+    profileImage: { type: mongoose.Types.ObjectId, ref:"Image", default:"" }
   },
   { timestamps: true }
 );
 
-// Virtual field to populate articles associated with the user
+
 userSchema.virtual("topics", {
-  ref: "Topic", // The model to use (ensure Article is registered in Mongoose)
-  localField: "_id", // Field in the User model
-  foreignField: "userId", // Field in the Article model
+  ref: "Topic",
+  localField: "_id",
+  foreignField: "userId",
 });
 
-// Ensure virtuals are included in JSON and object outputs
 userSchema.set("toObject", { virtuals: true });
 userSchema.set("toJSON", { virtuals: true });
 

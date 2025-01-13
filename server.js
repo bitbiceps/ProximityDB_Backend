@@ -1,5 +1,4 @@
 import express from "express";
-
 import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes.js";
@@ -9,6 +8,7 @@ import webhookRouter from "./routes/webhookRoutes.js";
 import topicRouter from "./routes/topicRoutes.js";
 import internalRouter from "./routes/internalRoutes.js";
 import registrationRoute from "./routes/registrationRoute.js";
+import imageRouter from "./routes/imageRoutes.js";
 
 const app = express();
 
@@ -31,6 +31,11 @@ app.use("/article", express.json(), articleRouter);
 app.use("/topic", express.json(), topicRouter);
 app.use("/internal", express.json(), internalRouter);
 app.use("/api", express.json(), registrationRoute);
+app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static('uploads'));
+app.use('/upload', imageRouter);
+
+
 
 app.get("/", async (req, res) => {
   return res.status(200).json({ message: "Server working successfully" });
