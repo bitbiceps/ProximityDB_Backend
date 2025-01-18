@@ -47,7 +47,7 @@ export const registerUser = async (req, res) => {
     const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
       expiresIn: "4d",
     });
-    const verificationLink = `http://localhost:5000/api/auth/verify/${token}`;
+    const verificationLink = `https://api.proximity.press/api/auth/verify/${token}`;
 
     await transporter.sendMail({
       from: "mohd.k@saimanshetty.com",
