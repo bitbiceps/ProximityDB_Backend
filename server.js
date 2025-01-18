@@ -9,11 +9,11 @@ import topicRouter from "./routes/topicRoutes.js";
 import internalRouter from "./routes/internalRoutes.js";
 import registrationRoute from "./routes/registrationRoute.js";
 import imageRouter from "./routes/imageRoutes.js";
+import userRouter from "./routes/userRoutes.js";
 
 const app = express();
 
-const db = process.env.DB.replace("<db_password>", process.env.password);
-// const db = process.env.DB;
+const db = process.env.DB;
 mongoose
   .connect(db, {
     serverSelectionTimeoutMS: 5000, // 5 seconds
@@ -31,11 +31,9 @@ app.use("/article", express.json(), articleRouter);
 app.use("/topic", express.json(), topicRouter);
 app.use("/internal", express.json(), internalRouter);
 app.use("/api", express.json(), registrationRoute);
-app.use('/uploads', express.static('uploads'));
-app.use('/uploads', express.static('uploads'));
-app.use('/upload', imageRouter);
-
-
+app.use("/uploads", express.static("uploads"));
+app.use("/upload", imageRouter);
+app.use("/user", express.json(), userRouter);
 
 app.get("/", async (req, res) => {
   return res.status(200).json({ message: "Server working successfully" });

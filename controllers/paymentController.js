@@ -27,9 +27,8 @@ export const createPayment = async (req, res) => {
       currency: "inr",
       metadata: { userId },
       capture_method: "automatic", // Ensures automatic confirmation and capture
-
     });
-   console.log("paymentIntent",paymentIntent)
+    console.log("paymentIntent", paymentIntent);
     const order = new Payment({
       userId,
       amount,
