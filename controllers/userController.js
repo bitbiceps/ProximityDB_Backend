@@ -49,19 +49,13 @@ export const updateUserProfileData = async (req, res) => {
   }
 };
 
-export const handleUserProfileQuestionaire = async (req, res) => {
+export const handleUserProfilePrimaryQuestionaire = async (req, res) => {
   try {
-    // Destructure fields from the request body
-    const {
-      user: userId,
-      fieldOrIndustry,
-      skillOrArea,
-      mainOutcome,
-      optional = {}, // Default to an empty object if optional is not provided
-    } = req.body;
+    // Destructure the fields from the request body
+    const { user: userId, ...answers } = req.body;
 
     // Validate required fields
-    if (!userId || !fieldOrIndustry || !skillOrArea || !mainOutcome) {
+    if (!userId || Object.keys(answers).length !== 4) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -73,43 +67,12 @@ export const handleUserProfileQuestionaire = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update the user’s profile with the new details
-    user.industryFieldOfWork = fieldOrIndustry;
-
-    // Update the questionnaire with the new answers
-    user.questionnaire.primary = {
-      fieldOrIndustry: {
-        question: "What field or industry do you primarily work in?",
-        answer: fieldOrIndustry,
-      },
-      skillOrArea: {
-        question: "What is your primary skill or area of expertise?",
-        answer: skillOrArea,
-      },
-      mainOutcome: {
-        question:
-          "What’s the main outcome you seek from using this platform/product?",
-        answer: mainOutcome,
-      },
-    };
-
-    // Conditionally update optional fields if provided
-    if (optional.specialization) {
-      user.questionnaire.optional = user.questionnaire.optional || {}; // Initialize optional if not already
-      user.questionnaire.optional.specialization = {
-        question: "What areas of your field do you specialize in?",
-        answer: optional.specialization,
-      };
-    }
-
-    if (optional.problemToSolve) {
-      user.questionnaire.optional = user.questionnaire.optional || {}; // Initialize optional if not already
-      user.questionnaire.optional.problemToSolve = {
-        question:
-          "What specific problem are you looking to solve or improve in your work?",
-        answer: optional.problemToSolve,
-      };
-    }
+    // Update the primary questionnaire section with the new answers
+    Object.keys(answers).forEach((key) => {
+      if (user.questionnaire.primary[key]) {
+        user.questionnaire.primary[key].answer = answers[key];
+      }
+    });
 
     // Save the updated user data
     const updatedUser = await user.save();
@@ -118,6 +81,47 @@ export const handleUserProfileQuestionaire = async (req, res) => {
     res
       .status(200)
       .json({ message: "Details added successfully", user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const handleUserProfileSecondaryQuestionaire = async (req, res) => {
+  try {
+    // Destructure the fields from the request body
+    const { user: userId, ...answers } = req.body;
+
+    // Validate required fields
+    if (!userId || Object.keys(answers).length !== 8) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Find the user by their ID
+    const user = await userModel.findById(userId);
+
+    // Check if the user exists
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update only the secondary questionnaire section with the new answers
+    Object.keys(answers).forEach((key) => {
+      if (user.questionnaire.secondary[key]) {
+        user.questionnaire.secondary[key].answer = answers[key];
+      }
+    });
+
+    // Save the updated user data
+    const updatedUser = await user.save();
+
+    // Respond with the updated user data
+    res
+      .status(200)
+      .json({
+        message: "Secondary details added successfully",
+        user: updatedUser,
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });

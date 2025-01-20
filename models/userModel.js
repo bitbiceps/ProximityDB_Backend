@@ -23,72 +23,99 @@ const userSchema = new mongoose.Schema(
     // Use a sub-schema for the questionnaire
     questionnaire: {
       primary: {
-        fieldOrIndustry: {
+        1: {
           question: {
             type: String,
-            default: "What field or industry do you primarily work in?",
+            default: "Could you please describe your role or job title?",
           },
           answer: { type: String, default: "" },
         },
-        skillOrArea: {
+        2: {
           question: {
             type: String,
-            default: "What is your primary skill or area of expertise?",
+            default: "Please specify your industry or field of work.",
           },
           answer: { type: String, default: "" },
         },
-        mainOutcome: {
+        3: {
           question: {
             type: String,
             default:
-              "What’s the main outcome you seek from using this platform/product?",
+              "What specific areas of your craft or industry do you have the most knowledge in? List them in a high to low order.",
+          },
+          answer: { type: String, default: "" },
+        },
+        4: {
+          question: {
+            type: String,
+            default:
+              "What about the problems that you can apply your skills to is not working well right now? How could it improve?",
           },
           answer: { type: String, default: "" },
         },
       },
-      optional: {
-        specialization: {
-          question: {
-            type: String,
-            default: "What areas of your field do you specialize in?",
-          },
-          answer: { type: String, default: "" },
-        },
-        problemToSolve: {
+      secondary: {
+        1: {
           question: {
             type: String,
             default:
-              "What specific problem are you looking to solve or improve in your work?",
+              "What are all the possible end applications of your past and present work?",
           },
           answer: { type: String, default: "" },
         },
-      },
-      advanced: {
-        applicationOfWork: {
+        2: {
           question: {
             type: String,
-            default: "What are the applications of your work?",
+            default:
+              "What are the gaps in your industry or workplace in general? What areas are underserved? Please explain.",
           },
           answer: { type: String, default: "" },
         },
-        industrialGaps: {
+        3: {
           question: {
             type: String,
-            default: "What are the biggest gaps in your industry?",
+            default:
+              "What are five of the biggest impactful projects you have worked on, and what are your proudest career accomplishments?",
           },
           answer: { type: String, default: "" },
         },
-        accomplishments: {
+        4: {
           question: {
             type: String,
-            default: "What are your biggest accomplishments?",
+            default:
+              "How can you demonstrate that you are THE expert? Describe the specific solutions and results you can provide.",
           },
           answer: { type: String, default: "" },
         },
-        uniqueSolution: {
+        5: {
           question: {
             type: String,
-            default: "What unique solutions or insights can you provide?",
+            default:
+              "What specific solutions are other people working on or providing in your field that are working well?",
+          },
+          answer: { type: String, default: "" },
+        },
+        6: {
+          question: {
+            type: String,
+            default:
+              "What specific skills and abilities do you have that are very specialized and there might be fewer people in?",
+          },
+          answer: { type: String, default: "" },
+        },
+        7: {
+          question: {
+            type: String,
+            default:
+              "List out the approximate size of each of the spaces/fields. How many people are working? If you are to compete with all others in different specific niches, how many other people would you be competing in each case?",
+          },
+          answer: { type: String, default: "" },
+        },
+        8: {
+          question: {
+            type: String,
+            default:
+              "What were five of your biggest challenges on the way to the above accomplishments?",
           },
           answer: { type: String, default: "" },
         },
