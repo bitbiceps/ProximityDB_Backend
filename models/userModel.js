@@ -17,9 +17,6 @@ const userSchema = new mongoose.Schema(
       ref: "Image",
     },
     gender: { type: String, default: null },
-    roleJobTitle: { type: String, default: "" },
-    industryFieldOfWork: { type: String, default: "" },
-
     // Use a sub-schema for the questionnaire
     questionnaire: {
       primary: {

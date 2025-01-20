@@ -18,6 +18,6 @@ topicRouter.put("/request-verify", handleVerifyTopicRequest);
 topicRouter.put("/add-suggestion", handleUpdateSuggestion);
 topicRouter.put("/submit", handleSubmitTopic);
 
-topicRouter.post("/questionnaire", handleTopicCreation);
+topicRouter.post("/generate", handleTopicCreation);
 
 export default topicRouter;

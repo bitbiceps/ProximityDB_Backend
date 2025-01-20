@@ -1,20 +1,17 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
-import Article from "../models/articleModels.js";
 import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "mohd.k@saimanshetty.com",
-    pass: "dhop yevr fmak mggi",
+    user: "vinay.m@saimanshetty.com",
+    pass: "vinay@cachelabs",
   },
 });
 export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, termsAccepted } = req.body;
-    console.log("req.bbbbbbbbbb", req.body);
-    console.log(fullName, email, password, phoneNumber, termsAccepted);
 
     if (!termsAccepted) {
       return res
@@ -50,7 +47,7 @@ export const registerUser = async (req, res) => {
     const verificationLink = `https://api.proximity.press/api/auth/verify/${token}`;
 
     await transporter.sendMail({
-      from: "mohd.k@saimanshetty.com",
+      from: "vinay.m@saimanshetty.com",
       to: email,
       subject: "Verify your email",
       text: `Click the link to verify your account: ${verificationLink}`,
