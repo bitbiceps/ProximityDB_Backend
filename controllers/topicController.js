@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js"; // Assuming you have a topicModel
 import openAi from "../openAi.js";
 import { articleStatus } from "../utils.js";
@@ -9,35 +8,54 @@ export const handleTopicCreation = async (req, res) => {
   try {
     const { numberOfArticles, userId } = req.body;
 
-    // Fetch user data and topic data in parallel (reducing query count)
-    const [user, existingTopics] = await Promise.all([
-      userModel.findById(userId).select({
-        "questionnaire.primary": 1,
-        "questionnaire.secondary": 1,
-      }),
-      topicModel.find({ userId }),
-    ]);
+    const user = await userModel
+      .findById(userId)
+      .select({
+        "questionnaire.basicInformation": 1,
+        "questionnaire.expertiseAndSkills": 1,
+        "questionnaire.challengesAndGaps": 1,
+        "questionnaire.impactAndAchievements": 1,
+        "questionnaire.industryContextAndInsights": 1,
+      })
+      .populate("topics"); // Populating topics based on the virtual reference
 
-    // Return early if topics already exist for the user
-    if (existingTopics.length) {
+    // Check if topics already exist for the user
+    if (user.topics.length) {
       return res
         .status(200)
-        .json({ message: "Topics found", data: existingTopics });
+        .json({ message: "Topics found", data: user.topics });
     }
 
     const questions = [
-      user.questionnaire.primary[1].answer,
-      user.questionnaire.primary[2].answer,
-      user.questionnaire.primary[3].answer,
-      user.questionnaire.primary[4].answer,
-      user.questionnaire.secondary[1]?.answer,
-      user.questionnaire.secondary[2]?.answer,
-      user.questionnaire.secondary[3]?.answer,
-      user.questionnaire.secondary[4]?.answer,
-      user.questionnaire.secondary[5]?.answer,
-      user.questionnaire.secondary[6]?.answer,
-      user.questionnaire.secondary[7]?.answer,
-      user.questionnaire.secondary[8]?.answer,
+      // Basic Information
+      user.questionnaire.basicInformation[1].answer,
+      user.questionnaire.basicInformation[2].answer,
+      user.questionnaire.basicInformation[3].answer,
+
+      //  Expertise And Skills
+      user.questionnaire.expertiseAndSkills[1]?.answer,
+      user.questionnaire.expertiseAndSkills[2]?.answer,
+      user.questionnaire.expertiseAndSkills[3]?.answer,
+      user.questionnaire.expertiseAndSkills[4]?.answer,
+      user.questionnaire.expertiseAndSkills[5]?.answer,
+
+      // Challenges And Gaps
+      user.questionnaire.challengesAndGaps[1]?.answer,
+      user.questionnaire.challengesAndGaps[2]?.answer,
+      user.questionnaire.challengesAndGaps[3]?.answer,
+
+      // Imapact And Achievements
+      user.questionnaire.impactAndAchievements[1]?.answer,
+      user.questionnaire.impactAndAchievements[2]?.answer,
+      user.questionnaire.impactAndAchievements[3]?.answer,
+      user.questionnaire.impactAndAchievements[4]?.answer,
+      user.questionnaire.impactAndAchievements[5]?.answer,
+      user.questionnaire.impactAndAchievements[6]?.answer,
+
+      // Industry Context And Insights
+      user.questionnaire.industryContextAndInsights[1]?.answer,
+      user.questionnaire.industryContextAndInsights[2]?.answer,
+      user.questionnaire.industryContextAndInsights[3]?.answer,
     ].filter((answer) => answer); // Filter out any empty answers
 
     const promptContent = `You are an AI that generates an array of 3 relevant topics based on a question's content. Please avoid using numbers in the topics.

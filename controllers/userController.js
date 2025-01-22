@@ -99,7 +99,8 @@ export const handleUserProfileSecondaryQuestionaire = async (req, res) => {
     } = req.body;
 
     // Validate required fields (ensure they are objects and not empty)
-    const isValidObject = (obj) => obj && typeof obj === 'object' && Object.keys(obj).length > 0;
+    const isValidObject = (obj) =>
+      obj && typeof obj === "object" && Object.keys(obj).length > 0;
 
     if (
       !userId ||
@@ -129,10 +130,10 @@ export const handleUserProfileSecondaryQuestionaire = async (req, res) => {
     };
 
     // Update fields in the user's questionnaire
-    updateField('expertiseAndSkills', expertiseAndSkills);
-    updateField('challengesAndGaps', challengesAndGaps);
-    updateField('impactAndAchievements', impactAndAchievements);
-    updateField('industryContextAndInsights', industryContextAndInsights);
+    updateField("expertiseAndSkills", expertiseAndSkills);
+    updateField("challengesAndGaps", challengesAndGaps);
+    updateField("impactAndAchievements", impactAndAchievements);
+    updateField("industryContextAndInsights", industryContextAndInsights);
 
     // Save the updated user data
     const updatedUser = await user.save();
@@ -147,5 +148,3 @@ export const handleUserProfileSecondaryQuestionaire = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
