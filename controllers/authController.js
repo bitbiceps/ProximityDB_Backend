@@ -40,18 +40,20 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       phoneNumber,
       termsAccepted,
+      isVerified:true,
+      paymentStatus:true
     });
     const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
       expiresIn: "4d",
     });
-    const verificationLink = `https://api.proximity.press/api/auth/verify/${token}`;
+    // const verificationLink = `https://api.proximity.press/api/auth/verify/${token}`;
 
-    await transporter.sendMail({
-      from: "vinay.m@saimanshetty.com",
-      to: email,
-      subject: "Verify your email",
-      text: `Click the link to verify your account: ${verificationLink}`,
-    });
+    // await transporter.sendMail({
+    //   from: "vinay.m@saimanshetty.com",
+    //   to: email,
+    //   subject: "Verify your email",
+    //   text: `Click the link to verify your account: ${verificationLink}`,
+    // });
     res
       .status(201)
       .json({ message: "User registered successfully", userId: newUser._id });
