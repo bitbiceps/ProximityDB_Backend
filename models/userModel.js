@@ -31,14 +31,14 @@ const userSchema = new mongoose.Schema(
         2: {
           question: {
             type: String,
-            default: "Please specify your industry or field of work.",
+            default: "Could you please describe your role or job title?",
           },
           answer: { type: String, default: "" },
         },
         3: {
           question: {
             type: String,
-            default: "Could you please describe your role or job title?",
+            default: "What specific areas of your craft or industry do you have the most knowledge in? List them in high to low order.  → Areas of Expertise",
           },
           answer: { type: String, default: "" },
         },
