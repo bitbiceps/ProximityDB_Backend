@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema(
         3: {
           question: {
             type: String,
-            default: "What specific areas of your craft or industry do you have the most knowledge in? List them in high to low order.  → Areas of Expertise",
+            default: "What specific areas of your craft or industry do you have the most knowledge in? List them in high to low order.",
           },
           answer: { type: String, default: "" },
         },
