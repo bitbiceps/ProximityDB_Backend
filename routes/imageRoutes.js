@@ -79,7 +79,7 @@ imageRouter.post("/article", articleMulter.single("file"), async (req, res) => {
   try {
     // Check if there's an existing image for the user
     const existingImage = await articleImageModel.findOne({
-      user: req.body.user,
+      article: req.body.article,
     });
 
     if (existingImage) {
@@ -105,8 +105,7 @@ imageRouter.post("/article", articleMulter.single("file"), async (req, res) => {
     const newImage = new articleImageModel({
       filename: cleanFilename,
       filepath: fileUrl,
-      user: req.body.user,
-      type: "article",
+      article: req.body.article,
     });
 
     await newImage.save();
