@@ -39,7 +39,7 @@ const articleSchema = new mongoose.Schema(
     },
     profileImage: {
       type: mongoose.Types.ObjectId,
-      ref: "Image",
+      ref: "ArticleImage",
     },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields

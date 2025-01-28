@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
     status: { type: String, default: "pending" },
     profileImage: {
       type: mongoose.Types.ObjectId,
-      ref: "Image",
+      ref: "ProfileImage",
     },
     gender: { type: String, default: null },
     // Use a sub-schema for the questionnaire
