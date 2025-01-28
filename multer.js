@@ -1,25 +1,46 @@
-// multer.js
 import multer from 'multer';
 import fs from 'fs';
 
-const storage = multer.diskStorage({
+// Helper function to initialize multer storage with directory creation and filename cleanup
+const createStorage = (uploadDir) => multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = './uploads';
-
-    // Check if the uploads directory exists, if not, create it
+    // Ensure the upload directory exists, and create it recursively if not
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
+      fs.mkdirSync(uploadDir, { recursive: true }); // Create parent directories as needed
     }
-
     cb(null, uploadDir); // Specify the destination folder
   },
   filename: (req, file, cb) => {
-    // Remove any trailing or leading spaces from the original filename
+    // Clean up the filename by replacing spaces with underscores
     const cleanFilename = file.originalname.split(" ").join("_");
-
-    // You can also add logic to handle duplicate filenames here if needed
-    cb(null, cleanFilename);
+    cb(null, cleanFilename); // Return the cleaned-up filename
   }
 });
-// Initialize multer with the storage settings
-export const upload = multer({ storage });
+
+// Article image storage configuration
+export const articleMulter = multer({
+  storage: createStorage('./uploads/article'), // Using the helper function
+  limits: { fileSize: 5 * 1024 * 1024 }, // Optional: Limit the file size to 5MB
+  fileFilter: (req, file, cb) => {
+    // Optional: Check for allowed image types (jpeg, png, gif)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true); // Allow the file
+  }
+});
+
+// Profile image storage configuration
+export const profileMulter = multer({
+  storage: createStorage('./uploads/profile'), // Using the same helper function
+  limits: { fileSize: 5 * 1024 * 1024 }, // Optional: Limit the file size to 5MB
+  fileFilter: (req, file, cb) => {
+    // Optional: Check for allowed image types (jpeg, png, gif)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true); // Allow the file
+  }
+});

@@ -21,13 +21,6 @@ const articleSchema = new mongoose.Schema(
       ref: "User", // Reference to the Topic model/collection
     },
 
-    // Photo related to the article, initially null
-    photo: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Photo", // Assuming 'Photo' is the name of the related collection for photo documents
-      default: null,
-    },
-
     // Boolean to track if a change is requested for the article
     updateRequested: {
       type: Boolean,
@@ -43,6 +36,10 @@ const articleSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Reference to the Topic model/collection
+    },
+    profileImage: {
+      type: mongoose.Types.ObjectId,
+      ref: "Image",
     },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields
