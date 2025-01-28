@@ -2,7 +2,7 @@
 import { Router } from "express";
 import userModel from "../models/userModel.js";
 import fs from "fs";
-import { fileBaseUrl } from "../utils.js";
+import { articleFile, profileFile } from "../utils.js";
 import profileImageModel from "../models/profileImageModel.js";
 import articleImageModel from "../models/articleImageModel.js";
 import articleModel from "../models/articleModels.js";
@@ -17,7 +17,7 @@ imageRouter.post("/profile", profileMulter.single("file"), async (req, res) => {
   }
 
   const cleanFilename = req.file.originalname.split(" ").join("_");
-  const fileUrl = `${fileBaseUrl}${req.file.filename}`; // Correct template literal
+  const fileUrl = `${profileFile}${req.file.filename}`; // Correct template literal
 
   try {
     // Check if there's an existing profile image for the user
@@ -74,7 +74,7 @@ imageRouter.post("/article", articleMulter.single("file"), async (req, res) => {
   }
 
   const cleanFilename = req.file.originalname.split(" ").join("_");
-  const fileUrl = `${fileBaseUrl}${req.file.filename}`;
+  const fileUrl = `${articleFile}${req.file.filename}`;
 
   try {
     // Check if there's an existing image for the user

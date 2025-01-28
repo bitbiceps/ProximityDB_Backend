@@ -5,5 +5,6 @@ export const articleStatus = {
 };
 
 
-export const fileBaseUrl = "https://api.proximity.press/uploads/"
+export const profileFile = "https://api.proximity.press/uploads/profile/"
+export const articleFile = "https://api.proximity.press/uploads/article/"
 // export const fileBaseUrl = "http://localhost:5000/uploads/"
