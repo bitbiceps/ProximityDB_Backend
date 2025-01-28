@@ -5,7 +5,8 @@ import {
   handleQuestionnaire,
   handleSubmitArticle,
   handleCreateArticles,
-  handleGetApprovedTopics
+  handleGetApprovedTopics,
+  handleGetArticlesById
 } from "../controllers/articleController.js";
 
 const articleRouter = Router();
@@ -16,4 +17,5 @@ articleRouter.post("/submit-questionnaire", handleQuestionnaire);
 articleRouter.put("/request-update", handleArticleUpdateRequested);
 articleRouter.put("/submit", handleSubmitArticle);
 articleRouter.post("/fetch-approvedtopics",handleGetApprovedTopics)
+articleRouter.post("/get",handleGetArticlesById)
 export default articleRouter;

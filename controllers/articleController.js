@@ -234,3 +234,33 @@ export const handleGetArticles = async (req, res) => {
       .json({ message: "An error occurred", error: error.message });
   }
 };
+
+
+
+export const handleGetArticlesById = async (req, res) => {
+  try {
+    // Assuming userId is sent as a query parameter
+    const { articleId } = req.body; // Or req.body.userId depending on how the request is made
+
+    if (!articleId) {
+      return res.status(400).json({ message: "articleId is required" });
+    }
+
+    // Find all articles associated with the userId
+    const article = await articleModel.findById(articleId).populate("profileImage");
+
+    if (!article) {
+      return res
+        .status(404)
+        .json({ message: "No articles found for this user" });
+    }
+
+    // Return the found articles
+    return res.status(200).json({ message: "Success", article });
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
