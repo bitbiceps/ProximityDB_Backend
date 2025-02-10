@@ -1,6 +1,7 @@
 import articleModel from "../models/articleModels.js";
 import openAi from "../openAi.js";
 import topicModel from "../models/topicModel.js";
+import userModel from "../models/userModel.js";
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
   try {
@@ -58,27 +59,26 @@ export const handleCreateArticles = async (req, res) => {
   const saveArticles = await articleModel.findOne({ topicId });
 
   try {
-    // Generate articles based on the questionnaire (using dummy data)
-    // for (let i = 0; i < numberOfArticles; i++) {
+    const user = await userModel.findById(userId);
+
     if (saveArticles && saveArticles?.value != "") {
       return res.status(200).json(saveArticles);
     } else {
       const article = await topicModel.findOne({ _id: topicId });
-      console.log("art", article);
       let t = "hello kaif is here";
       const response = await openAi.writer.chat.completions.create({
         model: openAi.model, // Default model
         messages: [
           {
             role: "system",
-            content:
-              "You are an AI article writer. Please generate a well-structured article that answers the given questionnaire questions. The article should be informative and engaging, without HTML tags.",
+            content: `You are an AI article writer. Please generate a well-structured article for given user that justifies the given topic. The article should be informative and engaging, without HTML tags. use professional words and include the user name`,
           },
           {
             role: "user",
             content: `
               Generate a detailed article based on the following questionnaire:
              Topic: ${article.finalTopic}
+             user: ${user.fullName}
 
               The article should include:
               - A well-organized body content with relevant details.
@@ -235,8 +235,6 @@ export const handleGetArticles = async (req, res) => {
   }
 };
 
-
-
 export const handleGetArticlesById = async (req, res) => {
   try {
     // Assuming userId is sent as a query parameter
@@ -247,7 +245,9 @@ export const handleGetArticlesById = async (req, res) => {
     }
 
     // Find all articles associated with the userId
-    const article = await articleModel.findById(articleId).populate("profileImage");
+    const article = await articleModel
+      .findById(articleId)
+      .populate("profileImage");
 
     if (!article) {
       return res
