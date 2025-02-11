@@ -309,7 +309,6 @@ export const handleSubmitTopic = async (req, res) => {
 export const getAllTopics = async (req, res) => {
   try {
     const { userId } = req.query; // Correct usage of req.params
-    console.log("useR", userId);
     const topics = await topicModel.find({ userId });
     if (topics) {
       return res.status(200).json({ message: "Topics Found", data: topics });

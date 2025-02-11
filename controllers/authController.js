@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 import nodemailer from "nodemailer";
+import userModel from "../models/userModel.js";
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -40,8 +41,8 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       phoneNumber,
       termsAccepted,
-      isVerified:true,
-      paymentStatus:true
+      isVerified: true,
+      paymentStatus: true,
     });
     const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
       expiresIn: "4d",
@@ -93,11 +94,9 @@ export const verifyEmail = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("reqqq", req.body);
     const user = await User.findOne({ email }).populate("topics");
-    console.log("user", user);
     if (!user) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({ message: "User does not exists" });
     }
 
     if (!user.isVerified) {
@@ -139,11 +138,6 @@ export const getUserArticles = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Fetch updated articles
-    // const updatedArticles = user.articles.filter(
-    //   (article) => article.isUpdated
-    // );
-
     res.status(200).json({
       message: "UPdated Articles fetched successfully",
       articles: user,
@@ -152,5 +146,33 @@ export const getUserArticles = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching articles", error: error.message });
+  }
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    // Extract token from the Authorization header or body (you can adjust as needed)
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    // Verify and decode the token (use jwt.verify instead of jwt.decode for security)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { userId } = decoded;
+
+    // Find the user from the database by userId
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return the user data if found
+    return res.status(200).json(user);
+
+  } catch (error) {
+    return res.status(401).json({ message: "Not Authorized" });
   }
 };
