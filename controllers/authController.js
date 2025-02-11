@@ -94,16 +94,16 @@ export const verifyEmail = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).populate("topics");
+    const user = await User.findOne({ email }).populate("topics profileImage");
     if (!user) {
       return res.status(400).json({ message: "User does not exists" });
     }
 
-    if (!user.isVerified) {
-      return res
-        .status(400)
-        .json({ message: "Please verify your email to log in." });
-    }
+    // if (!user.isVerified) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "Please verify your email to log in." });
+    // }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
