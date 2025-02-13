@@ -183,7 +183,6 @@ export const handleUpdateTopicRequest = async (req, res) => {
 
     // Toggle the `updateRequested` field of the found topic
 
-    console.log(topicToUpdate);
     topicToUpdate.updateRequested = !topicToUpdate.updateRequested;
 
     // Save the updated topic document
@@ -206,10 +205,8 @@ export const handleVerifyTopicRequest = async (req, res) => {
     const { topicId, index } = req.body; // Get topicId and index from body
 
     // Find the topic document by its ID
-    console.log("topic", topicId, index);
 
     const topic = await topicModel.findOne({ "topics._id": topicId });
-    console.log("topic", topic);
     if (!topic) {
       return res.status(404).json({ message: "Topic document not found" });
     }
@@ -244,7 +241,6 @@ export const handleVerifyTopicRequest = async (req, res) => {
 export const handleUpdateSuggestion = async (req, res) => {
   try {
     const { topicId, suggestion } = req.body; // Get topicId and suggestion from the request body
-    console.log("fghjk", topicId, suggestion);
     // Find the topic document by its ID
     const topic = await topicModel.findOne({ _id: topicId });
 

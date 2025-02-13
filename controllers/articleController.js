@@ -107,7 +107,6 @@ export const handleCreateArticles = async (req, res) => {
       const newObj = await articleModel.findOne({ topicId });
       article.articleId = newObj._id;
       await article.save();
-      console.log("newA", newObj, newObj._id, newObj.status);
       return res.status(200).json(newObj);
       // }
     }
@@ -120,7 +119,6 @@ export const handleCreateArticles = async (req, res) => {
 export const handleArticleUpdateRequested = async (req, res) => {
   try {
     const { articleId } = req.body; // Get articleId from the request parameters
-    console.log("uuuuuuu", articleId);
     // Find the article document by its ID
     const article = await articleModel.findOne({ _id: articleId });
 

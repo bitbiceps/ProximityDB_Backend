@@ -24,7 +24,6 @@ export const registerUser = async (req, res) => {
 
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
-      console.log("eeeeee", existingEmail);
       return res.status(400).json({ message: "Email is already registered" });
     }
 
@@ -80,9 +79,7 @@ export const verifyEmail = async (req, res) => {
     if (user.isVerified) {
       return res.status(400).json({ message: "User already verified" });
     }
-    // console.log("user", user);
     user.isVerified = true;
-    console.log("userStatus", user.isVerified);
     await user.save();
 
     res.status(200).json({ message: "Email verified. You can now log in." });
@@ -113,7 +110,6 @@ export const loginUser = async (req, res) => {
     const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "2h",
     });
-    // console.log("tok", accessToken);
 
     const refreshToken = "";
     res.status(200).json({
@@ -129,7 +125,6 @@ export const loginUser = async (req, res) => {
 export const getUserArticles = async (req, res) => {
   try {
     const { userId } = req.params; // User ID should be passed as a parameter
-    // console.log("artttttttttttt", userId);
 
     // Fetch the user and populate their articles
     const user = await User.findById(userId).populate("articles");

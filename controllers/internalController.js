@@ -181,7 +181,6 @@ export const handleTopicMarkCompleted = async (req, res) => {
 
     // Set the finalTopic to the value of the topic at the given index
     topic.finalTopic = topic.topics[index].value;
-    console.log("topo",topic)
 
     // Save the updated topic document
     await topic.save();
