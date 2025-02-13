@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 import nodemailer from "nodemailer";
 import userModel from "../models/userModel.js";
+import io from "../server.js";
+import { socketEvents } from "../utils.js";
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -99,11 +101,9 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "User does not exists" });
     }
 
-    // if (!user.isVerified) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "Please verify your email to log in." });
-    // }
+    io.emit(socketEvents.TEST__BROADCAST, { message: "Socket working successfully" });
+
+
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {

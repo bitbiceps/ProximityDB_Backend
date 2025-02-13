@@ -10,9 +10,13 @@ import internalRouter from "./routes/internalRoutes.js";
 import registrationRoute from "./routes/registrationRoute.js";
 import imageRouter from "./routes/imageRoutes.js";
 import userRouter from "./routes/userRoutes.js";
+import http from "http";
+import { Server } from "socket.io";
+import { socketEvents } from "./utils.js";
 
 const app = express();
 
+// Connect to MongoDB
 const db = process.env.DB;
 mongoose
   .connect(db, {
@@ -21,11 +25,10 @@ mongoose
   .then(() => console.log("Database connected successfully!!"))
   .catch((err) => console.log("Error connecting to database", err));
 
+// Middleware
 app.use(cors({ origin: "*" }));
-
 app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 app.use("/pay", express.json(), paymentRoutes);
-
 app.use("/api/auth", express.json(), authRoutes);
 app.use("/article", express.json(), articleRouter);
 app.use("/topic", express.json(), topicRouter);
@@ -35,9 +38,28 @@ app.use("/uploads", express.static("uploads"));
 app.use("/upload", imageRouter);
 app.use("/user", express.json(), userRouter);
 
-app.get("/", async (req, res) => {
-  return res.status(200).json({ message: "Server working successfully" });
+// Socket.IO setup
+const server = http.createServer(app); // Create an HTTP server from the Express app
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Allow connections from all origins
+    methods: ["GET", "POST"],
+  },
 });
 
+// Test route to ensure server is working
+app.get("/", async (req, res) => {
+  try {
+    return res.status(200).json({ message: "Server working successfully" });
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+});
+
+// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+export default io;
