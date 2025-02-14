@@ -1,18 +1,11 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
-import nodemailer from "nodemailer";
 import userModel from "../models/userModel.js";
 import io from "../server.js";
 import { socketEvents } from "../helpers/utils.js";
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USERNAME,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
-
+import { sendVerificationEmail } from "../helpers/mailer.js";
+// https://api.proximity.press/api/auth/verify/${token}
 export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, termsAccepted } = req.body;
@@ -43,53 +36,64 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       phoneNumber,
       termsAccepted,
-      isVerified: true,
       paymentStatus: true,
     });
     const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
       expiresIn: "4d",
     });
-    // const verificationLink = `https://api.proximity.press/api/auth/verify/${token}`;
 
-    // await transporter.sendMail({
-    //   from: "vinay.m@saimanshetty.com",
-    //   to: email,
-    //   subject: "Verify your email",
-    //   text: `Click the link to verify your account: ${verificationLink}`,
-    // });
+    sendVerificationEmail(email, token);
     res
       .status(201)
-      .json({ message: "User registered successfully", userId: newUser._id });
+      .json({ message: "Verification email sent", userId: newUser._id });
   } catch (error) {
     res
       .status(500)
       .json({ message: "Error registering user", error: error.message });
   }
 };
+
 export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!token) {
+      return res.status(400).json({ message: "Token is required" });
+    }
+
+    // Verify the token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid or expired token", error: error.message });
+    }
+
+    // Find the user by the email encoded in the token
     const user = await User.findOne({ email: decoded.email });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid token" });
+      return res.status(404).json({ message: "User not found" });
     }
 
+    // Check if the user is already verified
     if (user.isVerified) {
-      return res.status(400).json({ message: "User already verified" });
+      return res.status(400).json({ message: "User is already verified" });
     }
+
+    // Verify the user
     user.isVerified = true;
     await user.save();
 
+    // Send a success response
     res.status(200).json({ message: "Email verified. You can now log in." });
+
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Invalid or expired token", error: error.message });
+    console.error("Error verifying email:", error); // Log the error for debugging purposes
+    res.status(500).json({ message: "An unexpected error occurred. Please try again later.", error: error.message });
   }
 };
+
 
 export const loginUser = async (req, res) => {
   try {
@@ -171,7 +175,3 @@ export const checkAuth = async (req, res) => {
     return res.status(401).json({ message: "Not Authorized" });
   }
 };
-
-
-
-
