@@ -1,7 +1,7 @@
 import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
-import { articleStatus } from "../utils.js";
+import { articleStatus } from "../helpers/utils.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {

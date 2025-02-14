@@ -4,14 +4,15 @@ import User from "../models/userModel.js";
 import nodemailer from "nodemailer";
 import userModel from "../models/userModel.js";
 import io from "../server.js";
-import { socketEvents } from "../utils.js";
+import { socketEvents } from "../helpers/utils.js";
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "vinay.m@saimanshetty.com",
-    pass: "vinay@cachelabs",
+    user: process.env.EMAIL_USERNAME,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
+
 export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, termsAccepted } = req.body;
@@ -98,9 +99,9 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "User does not exists" });
     }
 
-    io.emit(socketEvents.TEST__BROADCAST, { message: "Socket working successfully" });
-
-
+    io.emit(socketEvents.TEST__BROADCAST, {
+      message: "Socket working successfully",
+    });
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -166,8 +167,11 @@ export const checkAuth = async (req, res) => {
 
     // Return the user data if found
     return res.status(200).json(user);
-
   } catch (error) {
     return res.status(401).json({ message: "Not Authorized" });
   }
 };
+
+
+
+

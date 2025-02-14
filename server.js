@@ -12,9 +12,9 @@ import imageRouter from "./routes/imageRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import http from "http";
 import { Server } from "socket.io";
-import { socketEvents } from "./utils.js";
 
 const app = express();
+let userSockets = {}; // To keep track of connected users by their socket ID
 
 // Connect to MongoDB
 const db = process.env.DB;
@@ -45,6 +45,35 @@ const io = new Server(server, {
     origin: "*", // Allow connections from all origins
     methods: ["GET", "POST"],
   },
+});
+
+io.on("connection", (socket) => {
+  console.log("A user connected: " + socket.id);
+
+  // Store socket ID for the user (for example, using userId or any identifier)
+  socket.on("register", (userId) => {
+    userSockets[userId] = socket.id;
+    console.log(`User ${userId} is registered with socket ${socket.id}`);
+  });
+
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    for (let userId in userSockets) {
+      if (userSockets[userId] === socket.id) {
+        delete userSockets[userId]; // Remove user from mapping when disconnected
+        break;
+      }
+    }
+    console.log("A user disconnected");
+  });
+
+  // Send notification to a specific user
+  socket.on("sendNotification", (data) => {
+    const { userId, message } = data;
+    if (userSockets[userId]) {
+      io.to(userSockets[userId]).emit("notification", message);
+    }
+  });
 });
 
 // Test route to ensure server is working

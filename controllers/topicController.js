@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import topicModel from "../models/topicModel.js"; // Assuming you have a topicModel
-import openAi from "../openAi.js";
-import { articleStatus } from "../utils.js";
+import openAi from "../helpers/openAi.js";
+import { articleStatus } from "../helpers/utils.js";
 import userModel from "../models/userModel.js";
 
 export const handleTopicCreation = async (req, res) => {

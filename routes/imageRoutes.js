@@ -2,11 +2,11 @@
 import { Router } from "express";
 import userModel from "../models/userModel.js";
 import fs from "fs";
-import { articleFile, profileFile } from "../utils.js";
+import { articleFile, profileFile } from "../helpers/utils.js";
 import profileImageModel from "../models/profileImageModel.js";
 import articleImageModel from "../models/articleImageModel.js";
 import articleModel from "../models/articleModels.js";
-import { articleMulter, profileMulter } from "../multer.js";
+import { articleMulter, profileMulter } from "../helpers/multer.js";
 
 const imageRouter = Router();
 

@@ -1,5 +1,5 @@
 import articleModel from "../models/articleModels.js";
-import openAi from "../openAi.js";
+import openAi from "../helpers/openAi.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
 // Function to handle questionnaire and generate articles
