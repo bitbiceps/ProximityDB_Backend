@@ -2,7 +2,15 @@ import registrationModel from "../models/registrationModel.js";
 
 export const userRegistration = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, prRequireFor, prObjective, additionalInfo } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      prRequireFor,
+      prObjective,
+      additionalInfo,
+    } = req.body;
 
     // Create and save a new registration entry
     const newRegistration = await registrationModel.create({

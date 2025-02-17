@@ -66,7 +66,9 @@ export const verifyEmail = async (req, res) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
-      return res.status(400).json({ message: "Invalid or expired token", error: error.message });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired token", error: error.message });
     }
 
     // Find the user by the email encoded in the token
@@ -87,13 +89,16 @@ export const verifyEmail = async (req, res) => {
 
     // Send a success response
     res.status(200).json({ message: "Email verified. You can now log in." });
-
   } catch (error) {
     console.error("Error verifying email:", error); // Log the error for debugging purposes
-    res.status(500).json({ message: "An unexpected error occurred. Please try again later.", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "An unexpected error occurred. Please try again later.",
+        error: error.message,
+      });
   }
 };
-
 
 export const loginUser = async (req, res) => {
   try {

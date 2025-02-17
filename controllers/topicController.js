@@ -56,9 +56,9 @@ export const handleTopicCreation = async (req, res) => {
       user.questionnaire.industryContextAndInsights[1]?.answer,
       user.questionnaire.industryContextAndInsights[2]?.answer,
       user.questionnaire.industryContextAndInsights[3]?.answer,
-    ].filter((answer) => answer.length>4); // Filter out any empty answers
+    ].filter((answer) => answer.length > 4); // Filter out any empty answers
 
-    const promptContent = `You are an AI that generates an array of 3 relevant article topics based on a question's content. Please avoid using numbers in the titles.
+    const promptContent = `You are an AI that generates an array of 3 relevant and complex article topics based on a question's content. Please avoid using numbers in the titles.
     Questions and answers:
     ${questions
       .map((answer, index) => `- Question-${index + 1}: ${answer}`)
@@ -68,7 +68,7 @@ export const handleTopicCreation = async (req, res) => {
     for (let i = 0; i < numberOfArticles; i++) {
       // Generate topics for one article using OpenAI
       const response = await openAi.writer.chat.completions.create({
-        model: "gpt-3.5-turbo", // Or "gpt-4" if you want to use GPT-4
+        model: openAi.model, // Or "gpt-4" if you want to use GPT-4
         messages: [
           {
             role: "system",

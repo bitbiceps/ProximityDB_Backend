@@ -10,10 +10,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-console.log({
-  user: process.env.EMAIL_USERNAME,
-  pass: process.env.EMAIL_PASSWORD,
-});
+// console.log({
+//   user: process.env.EMAIL_USERNAME,
+//   pass: process.env.EMAIL_PASSWORD,
+// });
 
 export const sendVerificationEmail = async (to, verificationToken) => {
   const mailOptions = {

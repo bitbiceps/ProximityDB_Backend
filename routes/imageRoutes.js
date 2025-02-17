@@ -96,7 +96,7 @@ imageRouter.post("/article", articleMulter.single("file"), async (req, res) => {
       await existingImage.save(); // Save the updated image metadata
 
       return res.send({
-        message: "Article image updated successfully!",  // Updated message to be more appropriate
+        message: "Article image updated successfully!", // Updated message to be more appropriate
         imageUrl: existingImage.filepath,
       });
     }
@@ -116,7 +116,7 @@ imageRouter.post("/article", articleMulter.single("file"), async (req, res) => {
     await article.save(); // Save the updated article document
 
     res.send({
-      message: "Article image uploaded successfully!",  // Updated message to be more appropriate
+      message: "Article image uploaded successfully!", // Updated message to be more appropriate
       imageUrl: newImage.filepath,
     });
   } catch (error) {
