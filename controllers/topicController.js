@@ -58,7 +58,7 @@ export const handleTopicCreation = async (req, res) => {
       user.questionnaire.industryContextAndInsights[3]?.answer,
     ].filter((answer) => answer.length > 4); // Filter out any empty answers
 
-    const promptContent = `You are an AI that generates an array of 3 relevant and complex article topics based on a question's content. Please avoid using numbers in the titles.
+    const promptContent = `You are an AI that generates an array of 3 relevant and complex article topics based on a question's content. Please avoid using numbers & "How to" in the titles.
     Questions and answers:
     ${questions
       .map((answer, index) => `- Question-${index + 1}: ${answer}`)
