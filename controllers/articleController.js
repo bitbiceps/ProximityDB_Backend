@@ -2,6 +2,7 @@ import articleModel from "../models/articleModels.js";
 import openAi from "../helpers/openAi.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
+
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
   try {
@@ -59,45 +60,96 @@ export const handleCreateArticles = async (req, res) => {
   const saveArticles = await articleModel.findOne({ topicId });
 
   try {
-    const user = await userModel.findById(userId);
+    const user = await userModel
+      .findById(userId)
+      .select({
+        "questionnaire.basicInformation": 1,
+        "questionnaire.expertiseAndSkills": 1,
+        "questionnaire.challengesAndGaps": 1,
+        "questionnaire.impactAndAchievements": 1,
+        "questionnaire.industryContextAndInsights": 1,
+      })
+      .populate("topics");
 
     if (saveArticles && saveArticles?.value != "") {
       return res.status(200).json(saveArticles);
     } else {
       const article = await topicModel.findOne({ _id: topicId });
-      let t = "hello kaif is here";
+
+      // Retrieve the questionnaire answers from the user
+      const questions = [
+        user.questionnaire.basicInformation[1].answer,
+        user.questionnaire.basicInformation[2].answer,
+        user.questionnaire.basicInformation[3].answer,
+
+        user.questionnaire.expertiseAndSkills[1]?.answer,
+        user.questionnaire.expertiseAndSkills[2]?.answer,
+        user.questionnaire.expertiseAndSkills[3]?.answer,
+        user.questionnaire.expertiseAndSkills[4]?.answer,
+
+        user.questionnaire.challengesAndGaps[1]?.answer,
+        user.questionnaire.challengesAndGaps[2]?.answer,
+        user.questionnaire.challengesAndGaps[3]?.answer,
+
+        user.questionnaire.impactAndAchievements[1]?.answer,
+        user.questionnaire.impactAndAchievements[2]?.answer,
+        user.questionnaire.impactAndAchievements[3]?.answer,
+        user.questionnaire.impactAndAchievements[4]?.answer,
+        user.questionnaire.impactAndAchievements[5]?.answer,
+        user.questionnaire.impactAndAchievements[6]?.answer,
+
+        user.questionnaire.industryContextAndInsights[1]?.answer,
+        user.questionnaire.industryContextAndInsights[2]?.answer,
+        user.questionnaire.industryContextAndInsights[3]?.answer,
+      ].filter((answer) => answer.length > 4);
+      const promptContent = `You are an AI article writer. Please generate a well-structured and insightful article for the user based on the following questionnaire answers. The article should be professional, informative, and engaging, reflecting the user's expertise and practical experience in the topic of: "${
+        article.finalTopic
+      }".
+
+      Here are the user's answers to the questionnaire:
+      
+      ${questions
+        .map((answer, index) => `- **Question-${index + 1}:** ${answer}`)
+        .join("\n")}
+      
+      The article should include:
+      1. **A well-organized structure**: Divide the content into logical sections such as an introduction, core insights, challenges, solutions, and a conclusion. Ensure each section flows naturally into the next for better readability.
+      2. **Relevant details and examples**: Integrate the key insights and examples provided by the user to demonstrate their expertise. Ensure that these details are practical, real-world, and tailored to the topic at hand.
+      3. **Clarity and coherence**: Avoid jargon and complex phrases that could confuse the reader. Use simple, concise sentences and clear transitions between ideas to maintain a smooth narrative.
+      4. **No HTML tags**: Keep the content free of HTML tags, focusing purely on textual content that’s easily readable.
+      5. **Professional and knowledgeable tone**: Write in a manner that reflects the user’s expertise and thought leadership in the field. The tone should be authoritative yet accessible.
+      6. **Highlight user expertise**: Throughout the article, emphasize the insights, knowledge, and experience shared by the user. This should reflect the user’s in-depth understanding of the subject.
+      7. **Core aspects of the topic**: Ensure the article addresses the main points of the topic, diving into key trends, challenges, or solutions related to **${
+        article.finalTopic
+      }**.
+      8. **Actionable takeaways and conclusion**: End the article with a concise summary of key insights. Provide actionable takeaways or recommendations that will add value for the reader, enabling them to apply the knowledge gained.
+      
+      The article should be informative, engaging, and provide valuable insights for the audience, ensuring that the user's perspective shines through as an expert on the topic.`;
+
+      // Generate the article content using OpenAI
       const response = await openAi.writer.chat.completions.create({
-        model: openAi.model, // Default model
+        model: openAi.model,
         messages: [
           {
             role: "system",
-            content: `You are an AI article writer. Please generate a well-structured article for given user that justifies the given topic. The article should be informative and engaging, without HTML tags. use professional words and include the user name`,
+            content: promptContent,
           },
           {
             role: "user",
-            content: `
-              Generate a detailed article based on the following questionnaire:
-             Topic: ${article.finalTopic}
-             user: ${user.fullName}
-
-              The article should include:
-              - A well-organized body content with relevant details.
-              - Avoid using HTML tags.
-              - Ensure readability and coherence.
-            `,
+            content: `Generate a detailed article based on the following questionnaire answers. The article should align with the topic: "${article.finalTopic}" and reflect the user's professional insights: "${user.fullName}"`,
           },
         ],
-        max_tokens: 800, // Limit tokens to ensure content length
-        temperature: 0.7, // Medium creativity and coherence
+        max_tokens: 800,
+        temperature: 0.7,
       });
 
       // Extract the generated content
       const generatedContent = response.choices[0].message.content.trim();
 
-      // Create a new article with the dummy content
+      // Create a new article with the generated content
       const newArticle = {
         value: generatedContent,
-        topicId: topicId, // Associate the article with the user
+        topicId: topicId,
         userId,
       };
 
@@ -107,12 +159,15 @@ export const handleCreateArticles = async (req, res) => {
       const newObj = await articleModel.findOne({ topicId });
       article.articleId = newObj._id;
       await article.save();
+
       return res.status(200).json(newObj);
-      // }
     }
   } catch (error) {
     console.error("Error generating articles:", error);
-    throw new Error("Error generating articles with OpenAI");
+    return res.status(500).json({
+      message: "An error occurred while generating the article",
+      error: error.message,
+    });
   }
 };
 

@@ -48,16 +48,16 @@ const userSchema = new mongoose.Schema(
         },
       },
       expertiseAndSkills: {
+        // 1: {
+        //   question: {
+        //     type: String,
+        //     default:
+        //       "What specific areas of your craft or industry do you have the most knowledge in? List them in high to low order.",
+        //   },
+        //   mandatory: { type: Boolean, default: true },
+        //   answer: { type: String, default: "" },
+        // },
         1: {
-          question: {
-            type: String,
-            default:
-              "What specific areas of your craft or industry do you have the most knowledge in? List them in high to low order.",
-          },
-          mandatory: { type: Boolean, default: true },
-          answer: { type: String, default: "" },
-        },
-        2: {
           question: {
             type: String,
             default:
@@ -66,7 +66,7 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
-        3: {
+        2: {
           question: {
             type: String,
             default:
@@ -75,7 +75,7 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
-        4: {
+        3: {
           question: {
             type: String,
             default:
@@ -84,7 +84,7 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
-        5: {
+        4: {
           question: {
             type: String,
             default:

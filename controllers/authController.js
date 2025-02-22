@@ -91,12 +91,10 @@ export const verifyEmail = async (req, res) => {
     res.status(200).json({ message: "Email verified. You can now log in." });
   } catch (error) {
     console.error("Error verifying email:", error); // Log the error for debugging purposes
-    res
-      .status(500)
-      .json({
-        message: "An unexpected error occurred. Please try again later.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "An unexpected error occurred. Please try again later.",
+      error: error.message,
+    });
   }
 };
 
