@@ -200,9 +200,11 @@ export const handleArticleUpdateRequested = async (req, res) => {
   }
 };
 
+// submit
+
 export const handleSubmitArticle = async (req, res) => {
   try {
-    const { articleId } = req.body; // Get articleId from the request parameters
+    const { articleId, termsAndCondition, companyName, authorName } = req.body; // Get articleId from the request parameters
     // Find the article document by its ID
     const article = await articleModel.findOne({ _id: articleId });
     const topic = await topicModel.findOne({ articleId });
@@ -214,6 +216,9 @@ export const handleSubmitArticle = async (req, res) => {
     // Set the submitted field to true and updateRequested to false
     article.status = "review";
     article.updateRequested = false;
+    article.termsAndCondition = termsAndCondition;
+    article.companyName = companyName;
+    article.authorName = authorName;
     topic.articleStatus = "review";
     // Save the updated article
     await article.save();
