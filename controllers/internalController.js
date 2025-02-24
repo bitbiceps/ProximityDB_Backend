@@ -197,3 +197,28 @@ export const handleTopicMarkCompleted = async (req, res) => {
     });
   }
 };
+
+export const getOutletList = async (req, res) => {
+  try {
+    // Add logic to decide outlet dynamically if necessary
+    const outlets = ["Outlet 1", "Outlet 2", "Outlet 3"];
+    const { articleId } = req.body;
+
+    if (!articleId) {
+      return res.status(400).json({ message: "Article ID is missing" });
+    }
+
+    // Fetch the article using await and ensure populate is correct
+    const article = await articleModel.findById(articleId).populate("topicId");
+
+    if (!article) {
+      return res.status(404).json({ message: "Article does not exist" });
+    }
+
+    // Return the list of outlets along with the article data
+    return res.status(200).json({ outlets, article });
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ message: error.message });
+  }
+};

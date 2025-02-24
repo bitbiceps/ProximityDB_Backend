@@ -41,9 +41,11 @@ const articleSchema = new mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: "ArticleImage",
     },
-    termsAndCondition: { type: Boolean, default: false },
-    companyName: { type: Boolean, default: false },
-    authorName: { type: Boolean, default: false },
+    metaData: {
+      termsAndCondition: { type: Boolean, default: false },
+      companyName: { type: Boolean, default: false },
+      authorName: { type: Boolean, default: false },
+    },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields
 );

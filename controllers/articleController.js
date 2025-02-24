@@ -216,9 +216,9 @@ export const handleSubmitArticle = async (req, res) => {
     // Set the submitted field to true and updateRequested to false
     article.status = "review";
     article.updateRequested = false;
-    article.termsAndCondition = termsAndCondition;
-    article.companyName = companyName;
-    article.authorName = authorName;
+    article.metaData.termsAndCondition = termsAndCondition;
+    article.metaData.companyName = companyName;
+    article.metaData.authorName = authorName;
     topic.articleStatus = "review";
     // Save the updated article
     await article.save();
