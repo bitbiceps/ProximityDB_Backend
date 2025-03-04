@@ -46,17 +46,17 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
+        4: {
+          question: {
+            type: String,
+            default:
+              "What is the name of the Company/Organization you work in?",
+          },
+          mandatory: { type: Boolean, default: false },
+          answer: { type: String, default: "" },
+        },
       },
       expertiseAndSkills: {
-        // 1: {
-        //   question: {
-        //     type: String,
-        //     default:
-        //       "What specific areas of your craft or industry do you have the most knowledge in? List them in high to low order.",
-        //   },
-        //   mandatory: { type: Boolean, default: true },
-        //   answer: { type: String, default: "" },
-        // },
         1: {
           question: {
             type: String,

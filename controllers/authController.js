@@ -111,9 +111,9 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "User does not exists" });
     }
 
-    io.emit(socketEvents.TEST__BROADCAST, {
-      message: "Socket working successfully",
-    });
+    // io.emit(socketEvents.TEST__BROADCAST, {
+    //   message: "Socket working successfully",
+    // });
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
