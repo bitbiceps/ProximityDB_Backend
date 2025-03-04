@@ -5,6 +5,9 @@ import {
   verifyEmail,
   getUserArticles,
   checkAuth,
+  handleResetPassword,
+  handleVerifyOtp,
+  changePassword,
 } from "../controllers/authController.js";
 import {
   validateRegistration,
@@ -18,4 +21,7 @@ router.post("/login", validateLogin, loginUser);
 router.get("/verify/:token", verifyEmail);
 router.get("/updated/:userId", getUserArticles);
 router.post("/check-auth", checkAuth);
+router.post("/reset-password",handleResetPassword)
+router.post("/verify-otp",handleVerifyOtp)
+router.post("/change-password",changePassword)
 export default router;
