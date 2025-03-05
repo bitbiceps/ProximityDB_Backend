@@ -156,7 +156,7 @@ export const handleCreateArticles = async (req, res) => {
       // Save the new article in the database
       await articleModel.create(newArticle);
 
-      const newObj = await articleModel.findOne({ topicId });
+      const newObj = await articleModel.findOne({ topicId }).populate("profileImage");
       article.articleId = newObj._id;
       await article.save();
 
