@@ -57,7 +57,7 @@ export const handleGetApprovedTopics = async (req, res) => {
 export const handleCreateArticles = async (req, res) => {
   const { _id: topicId, userId } = req.body;
 
-  const saveArticles = await articleModel.findOne({ topicId });
+  const saveArticles = await articleModel.findOne({ topicId }).populate("profileImage");;
 
   try {
     const user = await userModel
