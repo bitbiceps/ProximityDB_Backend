@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
     termsAccepted: { type: Boolean, required: true },
     isVerified: { type: Boolean, default: false },
     status: { type: String, default: "pending" },
+    dateOfBirth : {type : Date , default : null},
     profileImage: {
       type: mongoose.Types.ObjectId,
       ref: "ProfileImage",
@@ -26,6 +27,7 @@ const userSchema = new mongoose.Schema(
             default:
               "What fields or industries do you work or will you work in?",
           },
+          questionType: { type: String, default: "input" }, 
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
@@ -34,10 +36,35 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: "Could you please describe your role or job title?",
           },
-          mandatory: { type: Boolean, default: true },
+          questionType: { type: String, default: "select" }, 
+          options: {
+            type: [String],
+            default: [
+              "Software Engineer",
+              "Project Manager",
+              "Data Analyst",
+              "Product Manager",
+              "Marketing Specialist",
+              "Sales Representative",
+              "HR Manager",
+              "Other",
+            ],
+          },
           answer: { type: String, default: "" },
         },
         3: {
+          question: {
+            type: String,
+            default:
+              "What is the name of the Company/Organization you work in?",
+          },
+          questionType: { type: String, default: "input" }, 
+          mandatory: { type: Boolean, default: false },
+          answer: { type: String, default: "" },
+        },
+      },
+      expertiseAndSkills: {
+      1: {
           question: {
             type: String,
             default:
@@ -46,18 +73,7 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
-        4: {
-          question: {
-            type: String,
-            default:
-              "What is the name of the Company/Organization you work in?",
-          },
-          mandatory: { type: Boolean, default: false },
-          answer: { type: String, default: "" },
-        },
-      },
-      expertiseAndSkills: {
-        1: {
+        2: {
           question: {
             type: String,
             default:
@@ -66,7 +82,7 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
-        2: {
+        3: {
           question: {
             type: String,
             default:
@@ -75,7 +91,7 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
-        3: {
+        4: {
           question: {
             type: String,
             default:
@@ -84,7 +100,7 @@ const userSchema = new mongoose.Schema(
           mandatory: { type: Boolean, default: true },
           answer: { type: String, default: "" },
         },
-        4: {
+        5: {
           question: {
             type: String,
             default:

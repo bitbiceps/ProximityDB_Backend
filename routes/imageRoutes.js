@@ -26,6 +26,15 @@ imageRouter.post("/profile", profileMulter.single("file"), async (req, res) => {
     });
 
     if (existingImage) {
+
+      // if the user upload the image with same name
+      if(existingImage.filename  === cleanFilename) {
+        return res.send({
+          message: "Profile image updated successfully!",
+          imageUrl: existingImage.filepath,
+        });
+      }
+
       // Remove the old image file from the file system
       const oldFilePath = `./uploads/profile/${existingImage.filename}`; // Fixed missing backticks
       if (fs.existsSync(oldFilePath)) {
@@ -83,6 +92,15 @@ imageRouter.post("/article", articleMulter.single("file"), async (req, res) => {
     });
 
     if (existingImage) {
+
+      // if the user upload the image with same name
+      if(existingImage.filename  === cleanFilename) {
+        return res.send({
+          message: "Profile image updated successfully!",
+          imageUrl: existingImage.filepath,
+        });
+      }
+
       // Remove the old image file from the file system
       const oldFilePath = `./uploads/article/${existingImage.filename}`; // Fixed missing backticks
       if (fs.existsSync(oldFilePath)) {

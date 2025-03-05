@@ -13,7 +13,7 @@ export const getFullUserDetails = async (req, res) => {
   }
 };
 export const updateUserProfileData = async (req, res) => {
-  const { user: id, fields } = req.body;
+  const { user: id, fields , basicQuestionnaire} = req.body;
 
   if (!id) {
     return res.status(400).json({ message: "User id is mandatory" });
@@ -23,7 +23,7 @@ export const updateUserProfileData = async (req, res) => {
     // Find the user by ID
     const user = await userModel
       .findById(id)
-      .select("email fullName phoneNumber");
+      .select("email fullName phoneNumber dateOfBirth gender");
 
     // If user is not found, return an error
     if (!user) {
@@ -37,6 +37,15 @@ export const updateUserProfileData = async (req, res) => {
         user[field] = fields[field];
       }
     });
+
+    if(basicQuestionnaire && basicQuestionnaire.length === 3) {
+      basicQuestionnaire.forEach((value , index) => {
+        if (user.questionnaire.basicInformation[index+1]) {
+          user.questionnaire.basicInformation[index+1].answer = value;
+        }
+      });
+    }
+
 
     // Save the updated user
     await user.save();
