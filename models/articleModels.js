@@ -26,6 +26,7 @@ const articleSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    updatedContent:{type:String, default:""},
 
     // // Reference to the User document
     topicId: {

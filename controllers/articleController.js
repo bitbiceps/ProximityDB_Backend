@@ -172,33 +172,39 @@ export const handleCreateArticles = async (req, res) => {
 };
 
 export const handleArticleUpdateRequested = async (req, res) => {
+  const { articleId, content } = req.body; // Destructure request body
+
+  // Validate the input data
+  if (!articleId || !content) {
+    return res.status(400).json({ message: "articleId and content are required" });
+  }
+
   try {
-    const { articleId } = req.body; // Get articleId from the request parameters
-    // Find the article document by its ID
-    const article = await articleModel.findOne({ _id: articleId });
+    // Attempt to update the article directly
+    const article = await articleModel.findByIdAndUpdate(
+      articleId, 
+      { updateRequested: true, updatedContent: content }, 
+      { new: true } // Returns the updated document
+    );
 
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    // Toggle the updateRequested field
-    article.updateRequested = !article.updateRequested;
-
-    // Save the updated article
-    await article.save();
-
+    // Return the updated article document
     return res.status(200).json({
       message: "Article updateRequested status toggled successfully",
-      article, // Return the updated article document
+      article,
     });
   } catch (error) {
-    console.error("Error toggling updateRequested:", error);
+    console.error("Error updating article:", error);
     return res.status(500).json({
       message: "Error toggling updateRequested",
       error: error.message,
     });
   }
 };
+
 
 // submit
 
