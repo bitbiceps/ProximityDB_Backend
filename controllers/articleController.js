@@ -204,36 +204,56 @@ export const handleArticleUpdateRequested = async (req, res) => {
 
 export const handleSubmitArticle = async (req, res) => {
   try {
-    const { articleId, termsAndCondition, companyName, authorName } = req.body; // Get articleId from the request parameters
-    // Find the article document by its ID
-    const article = await articleModel.findOne({ _id: articleId });
-    const topic = await topicModel.findOne({ articleId });
+    const { articleId, termsAndCondition, companyName, authorName } = req.body;
+
+    // Fetch the article, topic, and user in parallel
+    const [article, topic] = await Promise.all([
+      articleModel.findOne({ _id: articleId }),
+      topicModel.findOne({ articleId }),
+    ]);
 
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    // Set the submitted field to true and updateRequested to false
+    if (!topic) {
+      return res.status(404).json({ message: "Topic not found" });
+    }
+
+    // Update the article and topic
     article.status = "review";
     article.updateRequested = false;
-    article.metaData.termsAndCondition = termsAndCondition;
-    article.metaData.companyName = companyName;
-    article.metaData.authorName = authorName;
+    article.metaData = {
+      ...article.metaData,
+      termsAndCondition,
+      companyName,
+      authorName,
+    };
     topic.articleStatus = "review";
-    // Save the updated article
-    await article.save();
-    await topic.save();
+
+    // Fetch the user and update their review count
+    const user = await userModel.findById(article.userId);
+    if (user) {
+      user.numberOfReviews += 1;
+      // Save the article, topic, and user in parallel
+      await Promise.all([article.save(), topic.save(), user.save()]);
+    } else {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     return res.status(200).json({
       message: "Article submitted for review",
       updatedArticle: article, // Return the updated article document
     });
   } catch (error) {
     console.error("Error submitting article:", error);
-    return res
-      .status(500)
-      .json({ message: "Error submitting article", error: error.message });
+    return res.status(500).json({
+      message: "Error submitting article",
+      error: error.message,
+    });
   }
 };
+
 
 export const handleArticleMarkCompleted = async (req, res) => {
   try {

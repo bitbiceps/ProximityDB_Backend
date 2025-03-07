@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: "ProfileImage",
     },
+    numberOfReviews:{type:Number, default:0},
     gender: { type: String, default: null },
     // Use a sub-schema for the questionnaire
     questionnaire: {

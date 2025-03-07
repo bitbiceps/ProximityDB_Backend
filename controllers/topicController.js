@@ -262,26 +262,35 @@ export const handleUpdateSuggestion = async (req, res) => {
 export const handleSubmitTopic = async (req, res) => {
   try {
     const { _id } = req.body; // Get topicId from the request body
+
+    // First, fetch the topic
     const topic = await topicModel.findById(_id);
 
     if (!topic) {
-      return res.status(404).json({ message: "Topic document not found" });
+      return res.status(404).json({ message: "Topic not found" });
     }
 
-    // Set the `submitted` field to `true`
-    topic.status = articleStatus.inReview;
+    // Now that we have the topic, fetch the user using topic.userId
+    const user = await userModel.findById(topic.userId);
 
-    // Reset the `updateRequested` and `verifyRequested` fields for all topics in the `topics` array
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update the user and topic
+    user.numberOfReviews += 1;
+
+    topic.status = articleStatus.inReview;
+    topic.suggestion = null;
+
+    // Reset the `updateRequested` and `verifyRequested` fields for all topics
     topic.topics.forEach((t) => {
       t.updateRequested = false;
       t.verifyRequested = false;
     });
 
-    // Set the suggestion to `null`
-    topic.suggestion = null;
-
-    // Save the updated topic document
-    await topic.save();
+    // Save both the user and the topic document in parallel
+    await Promise.all([user.save(), topic.save()]);
 
     return res.status(200).json({
       message: "Topic submitted successfully",
@@ -289,11 +298,14 @@ export const handleSubmitTopic = async (req, res) => {
     });
   } catch (error) {
     console.error("Error submitting topic:", error);
-    return res
-      .status(500)
-      .json({ message: "Error submitting topic", error: error.message });
+    return res.status(500).json({
+      message: "Error submitting topic",
+      error: error.message,
+    });
   }
 };
+
+
 
 export const getAllTopics = async (req, res) => {
   try {
