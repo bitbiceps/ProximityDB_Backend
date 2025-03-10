@@ -26,10 +26,25 @@ const userSchema = new mongoose.Schema(
           question: {
             type: String,
             default:
-              "What fields or industries do you work or will you work in?",
+              "What fields or industries do you work in?",
           },
-          questionType: { type: String, default: "input" }, 
+          questionType: { type: String, default: "select" }, 
           mandatory: { type: Boolean, default: true },
+          options : {
+            type : [String],
+            default : [
+              "Software and IT",
+              "Finance and Banking",
+              "Healthcare and Medicine",
+              "Education and Research",
+              "Marketing and Advertising",
+              "Sales and Business Development",
+              "Human Resources",
+              "Manufacturing and Engineering",
+              "Legal and Compliance",
+              "Creative and Design"
+            ]
+          },
           answer: { type: String, default: "" },
         },
         2: {
@@ -38,19 +53,6 @@ const userSchema = new mongoose.Schema(
             default: "Could you please describe your role or job title?",
           },
           questionType: { type: String, default: "select" }, 
-          options: {
-            type: [String],
-            default: [
-              "Software Engineer",
-              "Project Manager",
-              "Data Analyst",
-              "Product Manager",
-              "Marketing Specialist",
-              "Sales Representative",
-              "HR Manager",
-              "Other",
-            ],
-          },
           answer: { type: String, default: "" },
         },
         3: {

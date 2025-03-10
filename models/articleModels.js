@@ -46,7 +46,19 @@ const articleSchema = new mongoose.Schema(
       termsAndCondition: { type: Boolean, default: false },
       companyName: { type: Boolean, default: false },
       authorName: { type: Boolean, default: false },
-    },
+      outlets: [{
+        Outlets_Name: String,
+        Reporter_Byline: String,
+        Concerned_Agency: String,
+        Reach: String,
+        Backdating: String,
+        Genre_Beat: [String],
+        AI_Generated_Content: String,
+        Byline_Without_Author: String,
+        By_Desk: String,
+        Cost: String
+      }]
+          },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields
 );
