@@ -47,7 +47,7 @@ export const registerUser = async (req, res) => {
       expiresIn: "4d",
     });
 
-    // sendVerificationEmail(email, token);
+    sendVerificationEmail(email, token);
     res
       .status(201)
       .json({ message: "Verification email sent", userId: newUser._id });
@@ -108,7 +108,7 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email }).populate("topics profileImage");
     if (!user) {
-      return res.status(400).json({ message : "User does not exists" });
+      return res.status(400).json({ message: "User does not exists" });
     }
 
     // io.emit(socketEvents.TEST__BROADCAST, {
