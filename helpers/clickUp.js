@@ -17,7 +17,7 @@ const createTask = async (taskName, description) => {
         }
       );
   
-      console.log('Task created successfully:', response.data);
+    //   console.log('Task created successfully:', response.data);
       return response.data; // Return the created task data
     } catch (error) {
       console.error('Error creating task:', error.response ? error.response.data : error.message);
