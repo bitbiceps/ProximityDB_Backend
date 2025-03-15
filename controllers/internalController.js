@@ -2,6 +2,9 @@ import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
 import { articleStatus } from "../helpers/utils.js";
+import { socketEvents } from "../helpers/utils.js";
+import io from "../server.js";
+import { sendTopicVerifySuccessfully , sendArticleVerifySuccesfullly } from "../helpers/mailer.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
@@ -63,6 +66,7 @@ export const getAllUsers = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+
     // Get the total number of users using the faster estimatedDocumentCount
     const totalUsers = await userModel.estimatedDocumentCount();
 
@@ -72,7 +76,7 @@ export const getAllUsers = async (req, res) => {
       const lastUser = await userModel
         .find()
         .sort({ _id: -1 })
-        .skip((page - 2) * limit)
+        .skip((page - 1) * limit)
         .limit(1);
       if (lastUser.length > 0) {
         const lastUserId = lastUser[0]._id;
@@ -135,7 +139,7 @@ export const handleArticleMarkCompleted = async (req, res) => {
     const { articleId } = req.body; // Get articleId from the request parameters
 
     // Find the article document by its ID
-    const article = await articleModel.findOne({ _id: articleId });
+    const article = await articleModel.findOne({ _id: articleId }).populate('userId');
     const topic = await topicModel.findOne({ articleId });
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
@@ -148,6 +152,12 @@ export const handleArticleMarkCompleted = async (req, res) => {
     // Save the updated article
     await topic.save();
     await article.save();
+
+    io.emit(socketEvents.TEST__BROADCAST, {
+    message: "Article is verified successfully",
+   });
+
+    await sendArticleVerifySuccesfullly(article.userId.email)
 
     return res.status(200).json({
       message: "Article marked completed",
@@ -166,7 +176,7 @@ export const handleTopicMarkCompleted = async (req, res) => {
     const { _id, index } = req.body; // Get the topic _id and index from the request body
 
     // Find the topic document by its _id
-    const topic = await topicModel.findById(_id);
+    const topic = await topicModel.findById(_id).populate('userId');
 
     if (!topic) {
       return res.status(404).json({ message: "Topic not found" });
@@ -184,6 +194,12 @@ export const handleTopicMarkCompleted = async (req, res) => {
 
     // Save the updated topic document
     await topic.save();
+
+    io.emit(socketEvents.TEST__BROADCAST, {
+        message: "Topic is verified successfully",
+    });
+
+    await sendTopicVerifySuccessfully(topic.userId.email , topic.topics[index].value )
 
     return res.status(200).json({
       message: "Topic marked as completed",
@@ -222,3 +238,84 @@ export const getOutletList = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const handleSendTeamMessage = async (req, res) => {
+  try {
+    const { userId, message , date} = req.body;
+
+    if (!userId || !message || !date) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const newReply = {
+      message,
+      createdAt: new Date(date),
+    };
+
+    user.teamReply.unshift(newReply);
+    await user.save();
+
+    return res.status(200).json({ message: "Message sent successfully", teamReply: newReply });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const handleTopicSuggestion = async (req, res) => {
+  try {
+    const { topicId, status } = req.body;
+
+    const topic = await topicModel.findById(topicId).populate('userId');
+
+    if (!topic) {
+      return res.status(400).json({ message: "Topic not found" });
+    }
+
+    if (status === "approved" && topic.suggestion?.topic) {
+      topic.finalTopic = topic.suggestion.topic;
+      const newTopic = {
+        value: topic.suggestion.topic,
+        updateRequested: false,
+        verifyRequested: false,
+      };
+      topic.status = "completed";
+      topic.topics.push(newTopic);
+
+      const newReply = {
+        message: `Your title has been approved: ${topic.suggestion.topic}`,
+        createdAt: new Date(),
+      };
+
+      if (topic.userId) {
+        topic.userId.teamReply.unshift(newReply); // Update teamReply array
+        await topic.userId.save(); // Explicitly save the user document
+      }
+    }
+
+    // If status is "approved" or "rejected", remove the suggestion
+    if (status === "approved" || status === "rejected") {
+      topic.suggestion = null;
+    }
+
+    // Save the updated topic
+    await topic.save();
+
+    return res.status(200).json({
+      message: `Topic suggestion ${status} successfully`,
+      updatedTopic: topic,
+    });
+  } catch (error) {
+    console.error("Error handling topic suggestion:", error);
+    return res.status(500).json({
+      message: "Error processing topic suggestion",
+      error: error.message,
+    });
+  }
+};
+

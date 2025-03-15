@@ -52,7 +52,7 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: "Could you please describe your role or job title?",
           },
-          questionType: { type: String, default: "select" }, 
+          questionType: { type: String, default: "select" }, // options are taken in the frontend so its select
           answer: { type: String, default: "" },
         },
         3: {
@@ -228,6 +228,10 @@ const userSchema = new mongoose.Schema(
         },
       },
     },
+    teamReply : [{
+       message : {type : String , required : true},
+       createdAt : {type : Date , required : true}
+    }]
   },
   { timestamps: true }
 );

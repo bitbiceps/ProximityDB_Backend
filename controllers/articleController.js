@@ -3,6 +3,8 @@ import openAi from "../helpers/openAi.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
 import { determineBestOutlets } from "../helpers/utils.js";
+import io from "../server.js";
+import { socketEvents } from "../helpers/utils.js";
 
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
@@ -58,7 +60,7 @@ export const handleGetApprovedTopics = async (req, res) => {
 export const handleCreateArticles = async (req, res) => {
   const { _id: topicId, userId } = req.body;
 
-  const saveArticles = await articleModel.findOne({ topicId }).populate("profileImage");;
+  const saveArticles = await articleModel.findOne({ topicId }).populate("profileImage topicId");
 
   try {
     const user = await userModel
@@ -158,7 +160,7 @@ export const handleCreateArticles = async (req, res) => {
       // Save the new article in the database
       await articleModel.create(newArticle);
 
-      const newObj = await articleModel.findOne({ topicId }).populate("profileImage");
+      const newObj = await articleModel.findOne({ topicId }).populate("profileImage topicId");
       article.articleId = newObj._id;
       await article.save();
 
@@ -227,6 +229,30 @@ export const handleArticleContentUpdate = async (req , res) => {
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
+
+    const userId = article.userId
+
+    const newReply = {
+      message : "Your article is updated succesfully",
+      createdAt: new Date(),
+    };
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      {
+        $push: { teamReply: { $each: [newReply], $position: 0 } },
+      },
+      { new: true }
+    );
+
+    
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    io.emit(socketEvents.TEST__BROADCAST, {
+      message: "Article updated successfully",
+    });
 
     return res.status(200).json({
       message: "Article content updated successfully",

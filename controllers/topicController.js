@@ -233,7 +233,7 @@ export const handleVerifyTopicRequest = async (req, res) => {
 
 export const handleUpdateSuggestion = async (req, res) => {
   try {
-    const { topicId, suggestion } = req.body; // Get topicId and suggestion from the request body
+    const { topicId, suggestedTopic , message } = req.body; // Get topicId and suggestion from the request body
     // Find the topic document by its ID
     const topic = await topicModel.findOne({ _id: topicId });
 
@@ -241,15 +241,20 @@ export const handleUpdateSuggestion = async (req, res) => {
       return res.status(404).json({ message: "Topic document not found" });
     }
 
+    if (!topic.suggestion) {
+      topic.suggestion = { topic: "", message: "" }; // Initialize if undefined
+    }
+
     // Update the suggestion field of the found topic
-    topic.suggestion = suggestion || ""; // Set the suggestion to the value passed, or default to an empty string
+    topic.suggestion.topic = suggestedTopic ;
+    topic.suggestion.message = message ;    
 
     // Save the updated topic document
     await topic.save();
 
     return res.status(200).json({
       message: "Suggestion updated successfully",
-      updatedTopic: topic, // Return the updated topic document
+      updatedTopic: suggestedTopic, // Return the updated topic document
     });
   } catch (error) {
     console.error("Error updating suggestion:", error);
@@ -400,3 +405,33 @@ export const handleTopicUpdate = async (req, res) => {
       .json({ message: "An error occurred", error: error.message });
   }
 };
+
+export const handleTopicUpdateRequest = async (req , res) => {
+    try {
+      const { topicId , title } = req.body;
+  
+      if (!mongoose.Types.ObjectId.isValid(topicId)) {
+        return res.status(400).json({ message: "Invalid topic ID" });
+      }
+  
+      const topic = await topicModel.findById(topicId);
+  
+      if (!topic) {
+        return res.status(404).json({ message: "Topic not found" });
+      }
+
+        
+      topic.updatedTopic = title 
+      await topic.save();
+  
+      return res
+        .status(200)
+        .json({ message: "Topic updated successfully", data: topic });
+    } catch (error) {
+      console.error(error.message);
+      return res
+        .status(500)
+        .json({ message: "An error occurred", error: error.message });
+    }
+  };
+
