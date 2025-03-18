@@ -2,6 +2,7 @@ import articleModel from "../models/articleModels.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
 import { articleStatus } from "../helpers/utils.js";
+import createTask from "../helpers/clickUp.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
@@ -132,22 +133,43 @@ export const getReviewCounts = async (req, res) => {
 
 export const handleArticleMarkCompleted = async (req, res) => {
   try {
-    const { articleId } = req.body; // Get articleId from the request parameters
+    const { articleId } = req.body; // Get articleId from the request body
+
 
     // Find the article document by its ID
     const article = await articleModel.findOne({ _id: articleId });
-    const topic = await topicModel.findOne({ articleId });
+    
+    // Handle case if article is not found
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
+    }
+
+    // Fetch user and topic in parallel (using article.userId and articleId)
+    const [user, topic] = await Promise.all([
+      userModel.findById(article.userId), 
+      topicModel.findOne({ articleId })
+    ]);
+
+    // Handle case if topic is not found
+    if (!topic) {
+      return res.status(404).json({ message: "Topic not found" });
     }
 
     // Set the `submitted` field to true and `updateRequested` to false
     article.status = articleStatus.completed;
     article.updateRequested = false;
     topic.articleStatus = "completed";
-    // Save the updated article
-    await topic.save();
-    await article.save();
+
+    // Save the updated article and topic in parallel
+    await Promise.all([article.save(), topic.save()]);
+
+    // Create a task for the user (assuming createTask is a function that sends data to some service)
+    await createTask(
+      `${user.fullName} <Press> ${topic.finalTopic}`,
+      // `${user.email}\n${article.value}`
+      `${article.value}`
+    );
+    
 
     return res.status(200).json({
       message: "Article marked completed",
@@ -155,11 +177,13 @@ export const handleArticleMarkCompleted = async (req, res) => {
     });
   } catch (error) {
     console.error("Error submitting article:", error);
-    return res
-      .status(500)
-      .json({ message: "Error submitting article", error: error.message });
+    return res.status(500).json({
+      message: "Error submitting article",
+      error: error.message
+    });
   }
 };
+
 
 export const handleTopicMarkCompleted = async (req, res) => {
   try {

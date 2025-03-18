@@ -41,7 +41,6 @@ articleRouter.post("/create-task", async (req, res) => {
       task: taskData, // Return the created task data
     });
   } catch (error) {
-    console.error('Error creating task:', error);
     return res.status(500).json({ message: error.message });
   }
 });
