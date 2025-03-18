@@ -280,3 +280,224 @@ export const sendPasswordResetEmail = async (to, otp) => {
 
   return await transporter.sendMail(mailOptions);
 };
+
+export const sendTopicVerifySuccessfully = async (to, topic) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
+    to,
+    subject: "Topic Verified Successfully",
+    html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Topic Verification</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+              }
+              .container {
+                max-width: 600px;
+                margin: 40px auto;
+                padding: 20px;
+                background: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+              }
+              .logo-text {
+                text-align: center;
+                margin-bottom: 30px;
+                padding: 20px 0;
+              }
+              .logo-text span {
+                font-size: 32px;
+                font-weight: 700;
+                color: #4f46e5;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+              }
+              .header {
+                text-align: center;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 8px;
+              }
+              h1 {
+                color: #2d3748;
+                font-size: 24px;
+                margin: 0;
+                margin-bottom: 10px;
+              }
+              .content {
+                padding: 30px 20px;
+                text-align: center;
+              }
+              p {
+                color: #4a5568;
+                font-size: 16px;
+                margin: 0;
+                margin-bottom: 20px;
+              }
+              .success-message {
+                font-size: 18px;
+                font-weight: bold;
+                color: #38a169;
+                margin-bottom: 20px;
+              }
+              .footer {
+                text-align: center;
+                padding-top: 20px;
+                border-top: 1px solid #e2e8f0;
+                margin-top: 20px;
+              }
+              .footer p {
+                font-size: 14px;
+                color: #718096;
+              }
+              .secondary-text {
+                color: #6b7280;
+                font-size: 14px;
+                font-weight: 500;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="logo-text">
+                <span>PROXIMITY</span>
+                <div class="secondary-text">Topic Verification</div>
+              </div>
+              <div class="header">
+                <h1>Topic Verified Successfully!</h1>
+              </div>
+              <div class="content">
+                <p class="success-message">Your topic <strong>${topic}</strong> has been successfully verified.</p>
+                <p>You can now proceed with your next steps.</p>
+              </div>
+              <div class="footer">
+                <p>© ${new Date().getFullYear()} Proximity. All rights reserved.</p>
+                <p>This is an automated message, please do not reply to this email.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+  };
+  return await transporter.sendMail(mailOptions);
+};
+
+export const sendArticleVerifySuccesfullly = async (to) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
+    to,
+    subject: "Article Verified Successfully",
+    html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Topic Verification</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+              }
+              .container {
+                max-width: 600px;
+                margin: 40px auto;
+                padding: 20px;
+                background: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+              }
+              .logo-text {
+                text-align: center;
+                margin-bottom: 30px;
+                padding: 20px 0;
+              }
+              .logo-text span {
+                font-size: 32px;
+                font-weight: 700;
+                color: #4f46e5;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+              }
+              .header {
+                text-align: center;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 8px;
+              }
+              h1 {
+                color: #2d3748;
+                font-size: 24px;
+                margin: 0;
+                margin-bottom: 10px;
+              }
+              .content {
+                padding: 30px 20px;
+                text-align: center;
+              }
+              p {
+                color: #4a5568;
+                font-size: 16px;
+                margin: 0;
+                margin-bottom: 20px;
+              }
+              .success-message {
+                font-size: 18px;
+                font-weight: bold;
+                color: #38a169;
+                margin-bottom: 20px;
+              }
+              .footer {
+                text-align: center;
+                padding-top: 20px;
+                border-top: 1px solid #e2e8f0;
+                margin-top: 20px;
+              }
+              .footer p {
+                font-size: 14px;
+                color: #718096;
+              }
+              .secondary-text {
+                color: #6b7280;
+                font-size: 14px;
+                font-weight: 500;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="logo-text">
+                <span>PROXIMITY</span>
+                <div class="secondary-text">Article Verification</div>
+              </div>
+              <div class="header">
+                <h1>Article Verified Successfully!</h1>
+              </div>
+              <div class="content">
+                <p class="success-message">Your article has been successfully verified.</p>
+                <p>You can now proceed with your next steps.</p>
+              </div>
+              <div class="footer">
+                <p>© ${new Date().getFullYear()} Proximity. All rights reserved.</p>
+                <p>This is an automated message, please do not reply to this email.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+  };
+  return await transporter.sendMail(mailOptions);
+};
+
