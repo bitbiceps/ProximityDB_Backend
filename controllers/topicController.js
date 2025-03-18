@@ -3,6 +3,7 @@ import topicModel from "../models/topicModel.js"; // Assuming you have a topicMo
 import openAi from "../helpers/openAi.js";
 import { articleStatus } from "../helpers/utils.js";
 import userModel from "../models/userModel.js";
+import MessageModel from "../models/messageModal.js";
 
 export const handleTopicCreation = async (req, res) => {
   try {
@@ -245,7 +246,17 @@ export const handleUpdateSuggestion = async (req, res) => {
       topic.suggestion = { topic: "", message: "" }; // Initialize if undefined
     }
 
-    // Update the suggestion field of the found topic
+    const newMessage = MessageModel.create({
+      userId: topic.userId,
+      topicId: topicId,
+      status: "sent",
+      topicContent: {
+        topic: suggestedTopic,
+        message: message
+      },
+      messageType: "topic_update"
+    });
+
     topic.suggestion.topic = suggestedTopic ;
     topic.suggestion.message = message ;    
 

@@ -5,6 +5,7 @@ import { articleStatus } from "../helpers/utils.js";
 import { socketEvents } from "../helpers/utils.js";
 import io from "../server.js";
 import { sendTopicVerifySuccessfully , sendArticleVerifySuccesfullly } from "../helpers/mailer.js";
+import MessageModel from "../models/messageModal.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
@@ -241,10 +242,10 @@ export const getOutletList = async (req, res) => {
 
 export const handleSendTeamMessage = async (req, res) => {
   try {
-    const { userId, message , date} = req.body;
+    const { userId, message } = req.body;
 
-    if (!userId || !message || !date) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!userId || !message) {
+      return res.status(400).json({ message: "User ID and message are required" });
     }
 
     const user = await userModel.findById(userId);
@@ -252,24 +253,30 @@ export const handleSendTeamMessage = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const newReply = {
-      message,
-      createdAt: new Date(date),
-    };
+    
 
-    user.teamReply.unshift(newReply);
-    await user.save();
+    const newMessage = new MessageModel({
+      userId,
+      content: message,
+      messageType: "general",
+      overview: "General Team Message",
+    });
 
-    return res.status(200).json({ message: "Message sent successfully", teamReply: newReply });
+    await newMessage.save();
+
+    return res.status(200).json({
+      message: "Message sent successfully",
+      savedMessage: newMessage,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Error sending team message:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 export const handleTopicSuggestion = async (req, res) => {
   try {
-    const { topicId, status } = req.body;
+    const {msgId ,topicId, status , updatedTopic , content } = req.body;
 
     const topic = await topicModel.findById(topicId).populate('userId');
 
@@ -277,25 +284,29 @@ export const handleTopicSuggestion = async (req, res) => {
       return res.status(400).json({ message: "Topic not found" });
     }
 
-    if (status === "approved" && topic.suggestion?.topic) {
-      topic.finalTopic = topic.suggestion.topic;
+    const message = await MessageModel.findById(msgId);
+
+    if (!message) {
+      return res.status(400).json({ message: "Message not found" });
+    }
+
+    if (status === "approved" && updatedTopic) {
+      topic.finalTopic = updatedTopic ;
       const newTopic = {
-        value: topic.suggestion.topic,
+        value: updatedTopic,
         updateRequested: false,
         verifyRequested: false,
       };
       topic.status = "completed";
-      topic.topics.push(newTopic);
+      message.content = 'Topic request is approved successfully'
+      message.topicContent.topic = updatedTopic;
+      message.topicContent.message = content ;
+      message.topicContent.status = "approved";
+    }
 
-      const newReply = {
-        message: `Your title has been approved: ${topic.suggestion.topic}`,
-        createdAt: new Date(),
-      };
-
-      if (topic.userId) {
-        topic.userId.teamReply.unshift(newReply); // Update teamReply array
-        await topic.userId.save(); // Explicitly save the user document
-      }
+    if(status === 'rejected') {
+      message.content = 'Topic update request rejected'
+      message.topicContent.status = "rejected";
     }
 
     // If status is "approved" or "rejected", remove the suggestion
@@ -305,6 +316,7 @@ export const handleTopicSuggestion = async (req, res) => {
 
     // Save the updated topic
     await topic.save();
+    await message.save();
 
     return res.status(200).json({
       message: `Topic suggestion ${status} successfully`,
@@ -319,3 +331,84 @@ export const handleTopicSuggestion = async (req, res) => {
   }
 };
 
+export const fetchAllUserMessageList = async (req, res) => {
+  try {
+    const messagesByUsers = await MessageModel.aggregate([
+      {
+        $sort: { createdAt: -1 } // Sort messages globally by latest createdAt
+      },
+      {
+        $group: {
+          _id: "$userId", // Group messages by userId
+          messages: { $push: "$$ROOT" }, // Push all messages (latest first)
+          latestMessageAt: { $first: "$createdAt" } // Capture the latest message timestamp
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: "$userData",
+      },
+      {
+        $project: {
+          _id: 1,
+          "userData._id": 1,
+          "userData.email": 1,
+          "userData.fullName": 1,
+          messages: { $reverseArray: "$messages" }, // Reverse to get oldest-to-newest order
+          latestMessageAt: 1
+        },
+      },
+      {
+        $sort: { latestMessageAt: -1 } // Sort users by latest message time (descending)
+      }
+    ]);
+
+    return res.status(200).json({
+      message: "User messages fetched successfully",
+      data: messagesByUsers,
+    });
+  } catch (error) {
+    console.error("Error fetching user messages:", error);
+    return res.status(500).json({
+      message: "Error fetching user messages",
+      error: error.message,
+    });
+  }
+};
+
+
+export const handleReadMessage = async (req, res) => {
+  try {
+    const {userId} = req.body ;
+    const messagesToUpdate = await MessageModel.find({ userId , status: "sent", read: false })
+      .sort({ createdAt: -1 }); // Sort by latest first
+
+    if (!messagesToUpdate.length) {
+      return res.status(200).json({ message: "No unread sent messages found" });
+    }
+
+    // Extract message IDs
+    const messageIds = messagesToUpdate.map(msg => msg._id);
+
+    // Update all found messages to mark them as read
+    await MessageModel.updateMany(
+      { _id: { $in: messageIds } }, 
+      { $set: { read: true } }
+    );
+
+    return res.status(200).json({ 
+      message: `Marked ${messageIds.length} messages as read successfully` 
+    });
+
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};

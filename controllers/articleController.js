@@ -5,6 +5,7 @@ import userModel from "../models/userModel.js";
 import { determineBestOutlets } from "../helpers/utils.js";
 import io from "../server.js";
 import { socketEvents } from "../helpers/utils.js";
+import MessageModel from "../models/messageModal.js";
 
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
@@ -230,20 +231,12 @@ export const handleArticleContentUpdate = async (req , res) => {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    const userId = article.userId
-
-    const newReply = {
-      message : "Your article is updated succesfully",
-      createdAt: new Date(),
-    };
-
-    const updatedUser = await userModel.findByIdAndUpdate(
+    const newMessage = await messageModel.create({
       userId,
-      {
-        $push: { teamReply: { $each: [newReply], $position: 0 } },
-      },
-      { new: true }
-    );
+      messageType: "article_update",
+      articleId,
+      content : "Article is updated successfully"
+    });
 
     
     if (!updatedUser) {

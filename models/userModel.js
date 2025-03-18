@@ -228,10 +228,6 @@ const userSchema = new mongoose.Schema(
         },
       },
     },
-    teamReply : [{
-       message : {type : String , required : true},
-       createdAt : {type : Date , required : true}
-    }]
   },
   { timestamps: true }
 );

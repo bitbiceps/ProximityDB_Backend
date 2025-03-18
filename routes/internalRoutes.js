@@ -7,7 +7,9 @@ import {
   handleGetAllCount,
   handleTopicMarkCompleted,
   handleSendTeamMessage,
-  handleTopicSuggestion
+  handleTopicSuggestion,
+  fetchAllUserMessageList,
+  handleReadMessage
 } from "../controllers/internalController.js";
 
 const internalRouter = Router();
@@ -20,5 +22,7 @@ internalRouter.patch("/complete-topic", handleTopicMarkCompleted);
 internalRouter.post("/outlet-list", getOutletList);
 internalRouter.post("/send-message",handleSendTeamMessage);
 internalRouter.post("/update-topic-suggestion", handleTopicSuggestion); // for approving or rejecting the title suggestion from the internal dashboard
+internalRouter.get("/allMessageList" , fetchAllUserMessageList)
+internalRouter.post("/read-messsage",handleReadMessage);
 
 export default internalRouter;
