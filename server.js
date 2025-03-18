@@ -76,6 +76,15 @@ io.on("connection", (socket) => {
   });
 });
 
+export const sendNotification = ({userId, message}) => {
+  if (userSockets[userId]) {
+    io.to(userSockets[userId]).emit("notification", message);
+    console.log(`Notification sent to user ${userId}: ${message}`);
+  } else {
+    console.log(`User ${userId} is not online.`);
+  }
+};
+
 // Test route to ensure server is working
 app.get("/", async (req, res) => {
   try {
