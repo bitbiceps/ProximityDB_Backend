@@ -155,7 +155,7 @@ export const handleArticleMarkCompleted = async (req, res) => {
     await topic.save();
     await article.save();
 
-    sendNotification({userId : article?.userId?._id || article?.userId , messsage : 'Article is verified successfully'})
+    sendNotification({userId : article?.userId?._id || article?.userId , message : 'Article is verified successfully'})
 
     await sendArticleVerifySuccesfullly(article.userId.email)
 
@@ -195,7 +195,7 @@ export const handleTopicMarkCompleted = async (req, res) => {
     // Save the updated topic document
     await topic.save();
 
-    sendNotification({userId : topic?.userId?._id || topic?.userId , messsage : 'Topic is verified successfully'})
+    sendNotification({userId : topic?.userId?._id || topic?.userId , message : 'Topic is verified successfully'})
 
     await sendTopicVerifySuccessfully(topic.userId.email , topic.topics[index].value )
 
