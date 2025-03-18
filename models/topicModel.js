@@ -22,9 +22,12 @@ const topicSchema = new mongoose.Schema(
 
     // Suggestion as a plain object
     suggestion: {
-      type: String,
-      default: null,
-    },
+      type: {
+        topic: { type: String, required: true },
+        message: { type: String, required: true }
+      },
+      default : null
+    },    
     // Suggestion as a plain object
     finalTopic: {
       type: String,

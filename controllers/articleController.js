@@ -2,6 +2,10 @@ import articleModel from "../models/articleModels.js";
 import openAi from "../helpers/openAi.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
+import { determineBestOutlets } from "../helpers/utils.js";
+import io from "../server.js";
+import { socketEvents } from "../helpers/utils.js";
+import MessageModel from "../models/messageModal.js";
 
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
@@ -57,7 +61,7 @@ export const handleGetApprovedTopics = async (req, res) => {
 export const handleCreateArticles = async (req, res) => {
   const { _id: topicId, userId } = req.body;
 
-  const saveArticles = await articleModel.findOne({ topicId });
+  const saveArticles = await articleModel.findOne({ topicId }).populate("profileImage topicId");
 
   try {
     const user = await userModel
@@ -145,6 +149,7 @@ export const handleCreateArticles = async (req, res) => {
 
       // Extract the generated content
       const generatedContent = response.choices[0].message.content.trim();
+      console.log(generatedContent)
 
       // Create a new article with the generated content
       const newArticle = {
@@ -156,7 +161,7 @@ export const handleCreateArticles = async (req, res) => {
       // Save the new article in the database
       await articleModel.create(newArticle);
 
-      const newObj = await articleModel.findOne({ topicId }).populate("profileImage");
+      const newObj = await articleModel.findOne({ topicId }).populate("profileImage topicId");
       article.articleId = newObj._id;
       await article.save();
 
@@ -204,6 +209,56 @@ export const handleArticleUpdateRequested = async (req, res) => {
     });
   }
 };
+
+// content update 
+
+export const handleArticleContentUpdate = async (req , res) => {
+  const { articleId, content } = req.body; 
+
+  // Validate the input data
+  if (!articleId || !content) {
+    return res.status(400).json({ message: "articleId and content are required" });
+  }
+
+  try {
+    const article = await articleModel.findByIdAndUpdate(
+      articleId, 
+      { updateRequested: false, updatedContent: "" , value : content }, 
+      { new: true } 
+    );
+
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+
+    const newMessage = await messageModel.create({
+      userId,
+      messageType: "article_update",
+      articleId,
+      content : "Article is updated successfully"
+    });
+
+    
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    io.emit(socketEvents.TEST__BROADCAST, {
+      message: "Article updated successfully",
+    });
+
+    return res.status(200).json({
+      message: "Article content updated successfully",
+      article,
+    });
+  } catch (error) {
+    console.error("Error updating article:", error);
+    return res.status(500).json({
+      message: "Error updating article content",
+      error: error.message,
+    });
+  }
+}
 
 
 // submit
@@ -346,5 +401,43 @@ export const handleGetArticlesById = async (req, res) => {
     return res
       .status(500)
       .json({ message: "An error occurred", error: error.message });
+  }
+};
+
+
+
+export const determineBestOutletsForArticle = async (req, res) => {
+  const { articleId } = req.body;
+
+  if (!articleId) {
+    return res.status(400).json({ message: "Article ID is required" });
+  }
+
+  try {
+    let article = await articleModel.findById(articleId);
+
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+
+    const bestOutlets = await determineBestOutlets(article.value);
+
+    article = await articleModel.findByIdAndUpdate(
+      articleId,
+      { $set: { "metaData.outlets": bestOutlets } },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      message: "Best outlets determined successfully",
+      articleId: article._id,
+      bestOutlets,
+    });
+  } catch (error) {
+    console.error("Error determining best outlets:", error);
+    return res.status(500).json({
+      message: "An error occurred while determining the best outlets",
+      error: error.message,
+    });
   }
 };

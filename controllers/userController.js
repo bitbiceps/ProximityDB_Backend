@@ -1,4 +1,5 @@
 import userModel from "../models/userModel.js";
+import MessageModel from "../models/messageModal.js";
 
 export const getFullUserDetails = async (req, res) => {
   const { user: id } = req.query;
@@ -157,3 +158,30 @@ export const handleUserProfileSecondaryQuestionaire = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+export const fetchUserMessageList = async (req, res) => {
+  try {
+    const { userId } = req.params; 
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Fetch messages for the given userId, sorted by latest messages first
+    const userMessages = await MessageModel.find({ userId }).sort({ updatedAt: -1 });
+
+    if (!userMessages || userMessages.length === 0) {
+      return res.status(404).json({ message: "No messages found for this user" });
+    }
+
+    return res.status(200).json({
+      message: "User messages fetched successfully",
+      data: userMessages,
+    });
+  } catch (error) {
+    console.error("Error fetching user messages:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+

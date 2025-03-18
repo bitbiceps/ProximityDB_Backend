@@ -3,6 +3,10 @@ import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
 import { articleStatus } from "../helpers/utils.js";
 import createTask from "../helpers/clickUp.js";
+import { socketEvents } from "../helpers/utils.js";
+import io from "../server.js";
+import { sendTopicVerifySuccessfully , sendArticleVerifySuccesfullly } from "../helpers/mailer.js";
+import MessageModel from "../models/messageModal.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
@@ -64,6 +68,7 @@ export const getAllUsers = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+
     // Get the total number of users using the faster estimatedDocumentCount
     const totalUsers = await userModel.estimatedDocumentCount();
 
@@ -73,7 +78,7 @@ export const getAllUsers = async (req, res) => {
       const lastUser = await userModel
         .find()
         .sort({ _id: -1 })
-        .skip((page - 2) * limit)
+        .skip((page - 1) * limit)
         .limit(1);
       if (lastUser.length > 0) {
         const lastUserId = lastUser[0]._id;
@@ -137,9 +142,9 @@ export const handleArticleMarkCompleted = async (req, res) => {
 
 
     // Find the article document by its ID
-    const article = await articleModel.findOne({ _id: articleId });
     
     // Handle case if article is not found
+    const article = await articleModel.findOne({ _id: articleId }).populate('userId');
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
@@ -171,6 +176,12 @@ export const handleArticleMarkCompleted = async (req, res) => {
     );
     
 
+    io.emit(socketEvents.TEST__BROADCAST, {
+    message: "Article is verified successfully",
+   });
+
+    await sendArticleVerifySuccesfullly(article.userId.email)
+
     return res.status(200).json({
       message: "Article marked completed",
       updatedArticle: article, // Return the updated article document
@@ -190,7 +201,7 @@ export const handleTopicMarkCompleted = async (req, res) => {
     const { _id, index } = req.body; // Get the topic _id and index from the request body
 
     // Find the topic document by its _id
-    const topic = await topicModel.findById(_id);
+    const topic = await topicModel.findById(_id).populate('userId');
 
     if (!topic) {
       return res.status(404).json({ message: "Topic not found" });
@@ -208,6 +219,12 @@ export const handleTopicMarkCompleted = async (req, res) => {
 
     // Save the updated topic document
     await topic.save();
+
+    io.emit(socketEvents.TEST__BROADCAST, {
+        message: "Topic is verified successfully",
+    });
+
+    await sendTopicVerifySuccessfully(topic.userId.email , topic.topics[index].value )
 
     return res.status(200).json({
       message: "Topic marked as completed",
@@ -244,5 +261,178 @@ export const getOutletList = async (req, res) => {
   } catch (error) {
     console.error(error); // Log the error for debugging
     return res.status(500).json({ message: error.message });
+  }
+};
+
+export const handleSendTeamMessage = async (req, res) => {
+  try {
+    const { userId, message } = req.body;
+
+    if (!userId || !message) {
+      return res.status(400).json({ message: "User ID and message are required" });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    
+
+    const newMessage = new MessageModel({
+      userId,
+      content: message,
+      messageType: "general",
+      overview: "General Team Message",
+    });
+
+    await newMessage.save();
+
+    return res.status(200).json({
+      message: "Message sent successfully",
+      savedMessage: newMessage,
+    });
+  } catch (error) {
+    console.error("Error sending team message:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const handleTopicSuggestion = async (req, res) => {
+  try {
+    const {msgId ,topicId, status , updatedTopic , content } = req.body;
+
+    const topic = await topicModel.findById(topicId).populate('userId');
+
+    if (!topic) {
+      return res.status(400).json({ message: "Topic not found" });
+    }
+
+    const message = await MessageModel.findById(msgId);
+
+    if (!message) {
+      return res.status(400).json({ message: "Message not found" });
+    }
+
+    if (status === "approved" && updatedTopic) {
+      topic.finalTopic = updatedTopic ;
+      const newTopic = {
+        value: updatedTopic,
+        updateRequested: false,
+        verifyRequested: false,
+      };
+      topic.status = "completed";
+      message.content = 'Topic request is approved successfully'
+      message.topicContent.topic = updatedTopic;
+      message.topicContent.message = content ;
+      message.topicContent.status = "approved";
+    }
+
+    if(status === 'rejected') {
+      message.content = 'Topic update request rejected'
+      message.topicContent.status = "rejected";
+    }
+
+    // If status is "approved" or "rejected", remove the suggestion
+    if (status === "approved" || status === "rejected") {
+      topic.suggestion = null;
+    }
+
+    // Save the updated topic
+    await topic.save();
+    await message.save();
+
+    return res.status(200).json({
+      message: `Topic suggestion ${status} successfully`,
+      updatedTopic: topic,
+    });
+  } catch (error) {
+    console.error("Error handling topic suggestion:", error);
+    return res.status(500).json({
+      message: "Error processing topic suggestion",
+      error: error.message,
+    });
+  }
+};
+
+export const fetchAllUserMessageList = async (req, res) => {
+  try {
+    const messagesByUsers = await MessageModel.aggregate([
+      {
+        $sort: { createdAt: -1 } // Sort messages globally by latest createdAt
+      },
+      {
+        $group: {
+          _id: "$userId", // Group messages by userId
+          messages: { $push: "$$ROOT" }, // Push all messages (latest first)
+          latestMessageAt: { $first: "$createdAt" } // Capture the latest message timestamp
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: "$userData",
+      },
+      {
+        $project: {
+          _id: 1,
+          "userData._id": 1,
+          "userData.email": 1,
+          "userData.fullName": 1,
+          messages: { $reverseArray: "$messages" }, // Reverse to get oldest-to-newest order
+          latestMessageAt: 1
+        },
+      },
+      {
+        $sort: { latestMessageAt: -1 } // Sort users by latest message time (descending)
+      }
+    ]);
+
+    return res.status(200).json({
+      message: "User messages fetched successfully",
+      data: messagesByUsers,
+    });
+  } catch (error) {
+    console.error("Error fetching user messages:", error);
+    return res.status(500).json({
+      message: "Error fetching user messages",
+      error: error.message,
+    });
+  }
+};
+
+
+export const handleReadMessage = async (req, res) => {
+  try {
+    const {userId} = req.body ;
+    const messagesToUpdate = await MessageModel.find({ userId , status: "sent", read: false })
+      .sort({ createdAt: -1 }); // Sort by latest first
+
+    if (!messagesToUpdate.length) {
+      return res.status(200).json({ message: "No unread sent messages found" });
+    }
+
+    // Extract message IDs
+    const messageIds = messagesToUpdate.map(msg => msg._id);
+
+    // Update all found messages to mark them as read
+    await MessageModel.updateMany(
+      { _id: { $in: messageIds } }, 
+      { $set: { read: true } }
+    );
+
+    return res.status(200).json({ 
+      message: `Marked ${messageIds.length} messages as read successfully` 
+    });
+
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };

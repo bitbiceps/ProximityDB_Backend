@@ -7,6 +7,7 @@ import {
   handleVerifyTopicRequest,
   getAllTopics,
   handleTopicUpdate,
+  handleTopicUpdateRequest
 } from "../controllers/topicController.js";
 
 const topicRouter = Router();
@@ -17,6 +18,7 @@ topicRouter.put("/request-update", handleTopicUpdate);
 topicRouter.put("/request-verify", handleVerifyTopicRequest);
 topicRouter.put("/add-suggestion", handleUpdateSuggestion);
 topicRouter.put("/submit", handleSubmitTopic);
+topicRouter.post("/title-update", handleTopicUpdateRequest);
 
 topicRouter.post("/generate", handleTopicCreation);
 

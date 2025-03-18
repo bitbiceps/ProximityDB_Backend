@@ -4,6 +4,7 @@ import {
   handleUserProfilePrimaryQuestionaire,
   handleUserProfileSecondaryQuestionaire,
   updateUserProfileData,
+  fetchUserMessageList
 } from "../controllers/userController.js";
 
 const userRouter = Router();
@@ -15,5 +16,11 @@ userRouter.post(
   "/secondary-questionaire",
   handleUserProfileSecondaryQuestionaire
 );
+userRouter.post(
+  "/secondary-questionaire",
+  handleUserProfileSecondaryQuestionaire
+);
+userRouter.get("/messageList/:userId", fetchUserMessageList);
+
 
 export default userRouter;
