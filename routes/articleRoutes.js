@@ -10,6 +10,7 @@ import {
   determineBestOutletsForArticle,
   handleArticleContentUpdate
 } from "../controllers/articleController.js";
+import createTask from "../helpers/clickUp.js";
 
 const articleRouter = Router();
 
@@ -22,4 +23,30 @@ articleRouter.put("/submit", handleSubmitArticle);
 articleRouter.post("/fetch-approvedtopics", handleGetApprovedTopics);
 articleRouter.post("/get", handleGetArticlesById);
 articleRouter.post("/article-outlet",determineBestOutletsForArticle)
+
+
+
+
+articleRouter.post("/create-task", async (req, res) => {
+  const { name, description } = req.body;
+
+  // Validate incoming data
+  if (!name || !description) {
+    return res.status(400).json({ message: "Name and description are required." });
+  }
+
+  try {
+    // Call createTask to create a task in ClickUp
+    const taskData = await createTask(name, description);
+
+    // Send back the response data from ClickUp
+    return res.status(200).json({
+      message: "Task created successfully",
+      task: taskData, // Return the created task data
+    });
+  } catch (error) {
+    console.error('Error creating task:', error);
+    return res.status(500).json({ message: error.message });
+  }
+});
 export default articleRouter;
