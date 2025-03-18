@@ -112,9 +112,9 @@ export const getReviewCounts = async (req, res) => {
   try {
     const { userId } = req.query;
     // Get the count of articles with status "review"
-    const articlesInReview = await articleModel.find({
-      userId,
-    });
+    const articlesInReview = await articleModel
+    .find({ userId })
+    .populate("topicId", "finalTopic");
 
     // Get the count of topics with status "review"
     const topicsInReview = await topicModel.find({
