@@ -4,7 +4,7 @@ import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
 import { determineBestOutlets } from "../helpers/utils.js";
 import io from "../server.js";
-import { socketEvents } from "../helpers/utils.js";
+import { sendNotification } from "../server.js";
 import MessageModel from "../models/messageModal.js";
 
 // Function to handle questionnaire and generate articles
@@ -231,21 +231,15 @@ export const handleArticleContentUpdate = async (req , res) => {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    const newMessage = await messageModel.create({
-      userId,
+    const newMessage = await MessageModel.create({
+      userId : article?.userId,
       messageType: "article_update",
       articleId,
       content : "Article is updated successfully"
     });
 
     
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    io.emit(socketEvents.TEST__BROADCAST, {
-      message: "Article updated successfully",
-    });
+    sendNotification({userId : article?.userId ,message : "Article Updated succesfully"})
 
     return res.status(200).json({
       message: "Article content updated successfully",

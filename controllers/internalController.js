@@ -4,6 +4,7 @@ import userModel from "../models/userModel.js";
 import { articleStatus } from "../helpers/utils.js";
 import { socketEvents } from "../helpers/utils.js";
 import io from "../server.js";
+import { sendNotification } from "../server.js";
 import { sendTopicVerifySuccessfully , sendArticleVerifySuccesfullly } from "../helpers/mailer.js";
 import MessageModel from "../models/messageModal.js";
 
@@ -154,9 +155,7 @@ export const handleArticleMarkCompleted = async (req, res) => {
     await topic.save();
     await article.save();
 
-    io.emit(socketEvents.TEST__BROADCAST, {
-    message: "Article is verified successfully",
-   });
+    sendNotification({userId : article?.userId?._id || article?.userId , messsage : 'Article is verified successfully'})
 
     await sendArticleVerifySuccesfullly(article.userId.email)
 
@@ -196,9 +195,7 @@ export const handleTopicMarkCompleted = async (req, res) => {
     // Save the updated topic document
     await topic.save();
 
-    io.emit(socketEvents.TEST__BROADCAST, {
-        message: "Topic is verified successfully",
-    });
+    sendNotification({userId : topic?.userId?._id || topic?.userId , messsage : 'Topic is verified successfully'})
 
     await sendTopicVerifySuccessfully(topic.userId.email , topic.topics[index].value )
 
