@@ -94,10 +94,14 @@ app.get("/", async (req, res) => {
   }
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
+
+// const PORT = process.env.PORT || 3000; // Prod
+const PORT = process.env.STAGE || 3000;// Stage
+
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
 
 export default io;
