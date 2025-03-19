@@ -9,7 +9,8 @@ import {
   handleSendTeamMessage,
   handleTopicSuggestion,
   fetchAllUserMessageList,
-  handleReadMessage
+  handleReadMessage,
+  handleSelectOutlet
 } from "../controllers/internalController.js";
 
 const internalRouter = Router();
@@ -24,5 +25,6 @@ internalRouter.post("/send-message",handleSendTeamMessage);
 internalRouter.post("/update-topic-suggestion", handleTopicSuggestion); // for approving or rejecting the title suggestion from the internal dashboard
 internalRouter.get("/allMessageList" , fetchAllUserMessageList)
 internalRouter.post("/read-messsage",handleReadMessage);
+internalRouter.post("/select-outlet", handleSelectOutlet);
 
 export default internalRouter;

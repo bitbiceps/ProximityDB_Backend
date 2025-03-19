@@ -149,7 +149,6 @@ export const handleCreateArticles = async (req, res) => {
 
       // Extract the generated content
       const generatedContent = response.choices[0].message.content.trim();
-      console.log(generatedContent)
 
       // Create a new article with the generated content
       const newArticle = {
