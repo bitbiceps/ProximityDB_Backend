@@ -391,7 +391,7 @@ export const sendTopicVerifySuccessfully = async (to, topic) => {
   return await transporter.sendMail(mailOptions);
 };
 
-export const sendArticleVerifySuccesfullly = async (to) => {
+export const sendArticleVerifySuccesfullly = async (to, link) => {
   const mailOptions = {
     from: process.env.EMAIL_USERNAME,
     to,
@@ -459,6 +459,20 @@ export const sendArticleVerifySuccesfullly = async (to) => {
                 color: #38a169;
                 margin-bottom: 20px;
               }
+              .button {
+                display: inline-block;
+                background-color:rgb(203, 202, 226);
+                color: white;
+                text-decoration: none;
+                font-size: 16px;
+                font-weight: bold;
+                padding: 12px 24px;
+                border-radius: 6px;
+                transition: background 0.3s;
+              }
+              .button:hover {
+                background-color:rgb(165, 162, 190);
+              }
               .footer {
                 text-align: center;
                 padding-top: 20px;
@@ -488,6 +502,7 @@ export const sendArticleVerifySuccesfullly = async (to) => {
               <div class="content">
                 <p class="success-message">Your article has been successfully verified.</p>
                 <p>You can now proceed with your next steps.</p>
+                <a href="${link}" class="button">View Article</a>
               </div>
               <div class="footer">
                 <p>© ${new Date().getFullYear()} Proximity. All rights reserved.</p>

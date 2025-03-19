@@ -57,7 +57,8 @@ const articleSchema = new mongoose.Schema(
         Byline_Without_Author: String,
         By_Desk: String,
         Cost: String
-      }]
+      }],
+      selectedOutlet :{type : String , default : null}
           },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields

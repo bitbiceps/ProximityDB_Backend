@@ -173,13 +173,14 @@ export const handleArticleMarkCompleted = async (req, res) => {
     await createTask(
       `${user.fullName} <Press> ${topic.finalTopic}`,
       // `${user.email}\n${article.value}`
-      `${article.value}`
+      `${article.value} \n  **Selected Outlet :  ${article?.metaData?.selectedOutlet} **`
     );
-    
+
+    const articleUrl = `${process.env.FRONTEND_URL_Sec}/generated_article?id=${articleId}`;
 
     sendNotification({userId : article?.userId?._id || article?.userId , message : 'Article is verified successfully'})
 
-    await sendArticleVerifySuccesfullly(article.userId.email)
+    await sendArticleVerifySuccesfullly(article.userId.email , articleUrl)
 
     return res.status(200).json({
       message: "Article marked completed",
@@ -431,5 +432,26 @@ export const handleReadMessage = async (req, res) => {
   } catch (error) {
     console.error("Error marking messages as read:", error);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+export const handleSelectOutlet = async (req, res) => {
+  try {
+    const { outlet_name, articleId } = req.body;
+
+    const article = await articleModel.findByIdAndUpdate(
+      articleId,
+      { "metaData.selectedOutlet": outlet_name },
+      { new: true } // Returns the updated document
+    );
+
+    if (!article) {
+      return res.status(400).json({ message: "Article not found" });
+    }
+
+    res.status(200).json({ message: "Outlet selected successfully", article });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
