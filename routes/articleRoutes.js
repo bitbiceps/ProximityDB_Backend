@@ -8,14 +8,16 @@ import {
   handleGetApprovedTopics,
   handleGetArticlesById,
   determineBestOutletsForArticle,
-  handleArticleContentUpdate
+  handleArticleContentUpdate,
+  handleCreateArticlesSecond,
+  
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
 
 const articleRouter = Router();
 
 articleRouter.get("/", handleGetArticles);
-articleRouter.post("/create-article", handleCreateArticles);
+articleRouter.post("/create-article", handleCreateArticlesSecond);
 articleRouter.post("/submit-questionnaire", handleQuestionnaire);
 articleRouter.put("/request-update", handleArticleUpdateRequested);
 articleRouter.put("/update" , handleArticleContentUpdate);
