@@ -95,8 +95,8 @@ app.get("/", async (req, res) => {
 });
 
 
-// const PORT = process.env.PORT || 3000; // Prod
-const PORT = process.env.STAGE || 3000;// Stage
+const PORT = process.env.PORT || 3000; // Prod
+// const PORT = process.env.STAGE || 3000;// Stage
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
