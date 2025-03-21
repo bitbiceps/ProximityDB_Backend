@@ -145,7 +145,11 @@ export const sendVerificationEmail = async (to, verificationToken) => {
         `,
   };
 
-  return await transporter.sendMail(mailOptions);
+  try {
+    return await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new Error(error.message)
+  }
 };
 
 

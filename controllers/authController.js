@@ -2,8 +2,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 import userModel from "../models/userModel.js";
-import io from "../server.js";
-import { socketEvents } from "../helpers/utils.js";
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
@@ -33,7 +31,13 @@ export const registerUser = async (req, res) => {
         .json({ message: "Phone number is already registered" });
     }
 
+
     const hashedPassword = await bcrypt.hash(password, 10);
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: "4d",
+    });
+
+    sendVerificationEmail(email, token);
 
     const newUser = await User.create({
       fullName,
@@ -43,12 +47,9 @@ export const registerUser = async (req, res) => {
       termsAccepted,
       paymentStatus: true,
     });
-    const token = jwt.sign({ email: newUser.email }, process.env.JWT_SECRET, {
-      expiresIn: "4d",
-    });
 
-    sendVerificationEmail(email, token);
-    res
+
+    return await res
       .status(201)
       .json({ message: "Verification email sent", userId: newUser._id });
   } catch (error) {
