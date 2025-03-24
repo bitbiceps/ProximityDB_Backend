@@ -21,6 +21,10 @@ export const updateUserProfileData = async (req, res) => {
   }
 
   try {
+    const emailCheck = await userModel.findOne({ email: fields.email });
+    if (emailCheck && emailCheck._id.toString() !== id) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
     // Find the user by ID
     const user = await userModel
       .findById(id)
