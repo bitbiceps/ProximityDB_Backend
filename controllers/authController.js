@@ -112,6 +112,9 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "User does not exists" });
     }
 
+    if(!user.isVerified) {
+      return res.status(400).json({ message: "User is not verified" }); 
+      }
     // io.emit(socketEvents.TEST__BROADCAST, {
     //   message: "Socket working successfully",
     // });
