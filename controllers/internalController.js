@@ -475,15 +475,37 @@ export const createTicket = async (req, res) => {
     const { userId, subject, description } = req.body;
 
     if (!userId || !subject || !description) {
-      return res.status(400).json({ error: 'userId, subject, and description are required' });
+      return res
+        .status(400)
+        .json({ error: "userId, subject, and description are required" });
     }
 
     const ticket = await ticketModel.create({ userId, subject, description });
 
-    res.status(201).json({ message: 'Ticket created', ticket });
+    res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {
-    console.error('createTicket error:', err);
-    res.status(500).json({ error: 'Failed to create ticket', details: err.message });
+    console.error("createTicket error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to create ticket", details: err.message });
+  }
+};
+
+export const getTicket = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+
+    if (!ticketId) {
+      return res.status(400).json({ error: "ticketId is required" });
+    }
+
+    const ticket = await ticketModel.findById(ticketId);
+
+    res.status(201).json({ message: "Ticket fetched", ticket });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "Failed to get ticket", details: err.message });
   }
 };
 
@@ -493,17 +515,22 @@ export const listTickets = async (req, res) => {
     const { userId, isTeam } = req.query;
 
     if (!isTeam && !userId) {
-      return res.status(400).json({ error: 'userId is required if not fetching for team' });
+      return res
+        .status(400)
+        .json({ error: "userId is required if not fetching for team" });
     }
 
-    const tickets = isTeam === 'true'
-      ? await ticketModel.find().sort({ createdAt: -1 })
-      : await ticketModel.find({ userId }).sort({ createdAt: -1 });
+    const tickets =
+      isTeam === "true"
+        ? await ticketModel.find().sort({ createdAt: -1 })
+        : await ticketModel.find({ userId });
 
     res.status(200).json(tickets);
   } catch (err) {
-    console.error('listTickets error:', err);
-    res.status(500).json({ error: 'Failed to fetch tickets', details: err.message });
+    console.error("listTickets error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch tickets", details: err.message });
   }
 };
 
@@ -513,7 +540,7 @@ export const getMessages = async (req, res) => {
     const { ticketId } = req.params;
 
     if (!ticketId) {
-      return res.status(400).json({ error: 'ticketId is required' });
+      return res.status(400).json({ error: "ticketId is required" });
     }
 
     const messages = await teamMessageModel
@@ -522,8 +549,10 @@ export const getMessages = async (req, res) => {
 
     res.status(200).json(messages);
   } catch (err) {
-    console.error('getMessages error:', err);
-    res.status(500).json({ error: 'Failed to fetch messages', details: err.message });
+    console.error("getMessages error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch messages", details: err.message });
   }
 };
 
@@ -533,11 +562,15 @@ export const postMessage = async (req, res) => {
     const { ticketId } = req.params;
     const { senderId, senderRole, text } = req.body;
 
-    if (!ticketId || !senderId || !senderRole || !text) {
-      return res.status(400).json({ error: 'ticketId, senderId, senderRole, and text are required' });
+    // 🚨 Validate required fields
+    if (![ticketId, senderId, senderRole, text].every(Boolean)) {
+      return res.status(400).json({
+        error: "ticketId, senderId, senderRole, and text are required",
+      });
     }
 
-    const message = await teamMessageModel.create({
+    // 💬 Create the message
+    const newMessage = await teamMessageModel.create({
       ticketId,
       senderId,
       senderRole,
@@ -545,10 +578,22 @@ export const postMessage = async (req, res) => {
       readBy: [senderId],
     });
 
-    res.status(201).json({ message: 'Message posted', data: message });
+    // 📨 Fetch all messages for this ticket, sorted chronologically
+    const allMessages = await teamMessageModel
+      .find({ ticketId })
+      .sort({ createdAt: 1 });
+
+    // ✅ Success response
+    res.status(201).json({
+      message: "Message posted successfully",
+      newMessage,
+      allMessages,
+    });
   } catch (err) {
-    console.error('postMessage error:', err);
-    res.status(500).json({ error: 'Failed to send message', details: err.message });
+    res.status(500).json({
+      error: "Failed to send message",
+      details: err.message,
+    });
   }
 };
 
@@ -558,26 +603,28 @@ export const closeTicket = async (req, res) => {
     const { ticketId } = req.params;
 
     if (!ticketId) {
-      return res.status(400).json({ error: 'ticketId is required' });
+      return res.status(400).json({ error: "ticketId is required" });
     }
 
     const ticket = await ticketModel.findById(ticketId);
     if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
+      return res.status(404).json({ error: "Ticket not found" });
     }
 
-    if (ticket.status === 'closed') {
-      return res.status(400).json({ error: 'Ticket is already closed' });
+    if (ticket.status === "closed") {
+      return res.status(400).json({ error: "Ticket is already closed" });
     }
 
-    ticket.status = 'closed';
+    ticket.status = "closed";
     ticket.updatedAt = new Date();
 
     await ticket.save();
 
-    res.status(200).json({ message: 'Ticket closed successfully', ticket });
+    res.status(200).json({ message: "Ticket closed successfully", ticket });
   } catch (err) {
-    console.error('closeTicket error:', err);
-    res.status(500).json({ error: 'Failed to close ticket', details: err.message });
+    console.error("closeTicket error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to close ticket", details: err.message });
   }
 };

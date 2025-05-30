@@ -16,6 +16,7 @@ import {
   getMessages,
   postMessage,
   closeTicket,
+  getTicket,
 } from "../controllers/internalController.js";
 
 const internalRouter = Router();
@@ -34,6 +35,7 @@ internalRouter.post("/select-outlet", handleSelectOutlet);
 
 // Team Messages
 internalRouter.post("/tickets", createTicket); // Create ticket
+internalRouter.get("/tickets/single/:ticketId", getTicket); // Get ticket
 internalRouter.get("/tickets", listTickets); // List tickets
 internalRouter.get("/tickets/:ticketId/messages", getMessages); // Get messages of a ticket
 internalRouter.post("/tickets/:ticketId/messages", postMessage); // Post message on a ticket
