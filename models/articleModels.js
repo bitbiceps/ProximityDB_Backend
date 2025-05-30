@@ -35,6 +35,7 @@ const articleSchema = new mongoose.Schema(
       required: false, // Ensures every article is associated with a user
     },
     selectedTopic :{type : String , default : null},
+    fileName :{type : String , default : null},
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Reference to the Topic model/collection

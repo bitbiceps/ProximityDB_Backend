@@ -10,8 +10,9 @@ import {
   determineBestOutletsForArticle,
   handleArticleContentUpdate,
   handleCreateArticlesSecond,
-  handleGenerateArticle
-  
+  handleGenerateArticle,
+  handleArticleFileNameUpdate,
+  handleArticleDelete
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
 
@@ -22,11 +23,13 @@ articleRouter.post("/create-article", handleCreateArticlesSecond);
 articleRouter.post("/submit-questionnaire", handleQuestionnaire);
 articleRouter.put("/request-update", handleArticleUpdateRequested);
 articleRouter.put("/update" , handleArticleContentUpdate);
+articleRouter.put("/update-filename",handleArticleFileNameUpdate)
 articleRouter.put("/submit", handleSubmitArticle);
 articleRouter.post("/fetch-approvedtopics", handleGetApprovedTopics);
 articleRouter.post("/get", handleGetArticlesById);
 articleRouter.post("/article-outlet",determineBestOutletsForArticle)
 articleRouter.post("/generate-article",handleGenerateArticle);
+articleRouter.delete("/delete", handleArticleDelete);
 
 
 

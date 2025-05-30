@@ -214,7 +214,6 @@ export const handleArticleUpdateRequested = async (req, res) => {
 export const handleArticleContentUpdate = async (req , res) => {
   const { articleId, content } = req.body; 
 
-  // Validate the input data
   if (!articleId || !content) {
     return res.status(400).json({ message: "articleId and content are required" });
   }
@@ -252,6 +251,42 @@ export const handleArticleContentUpdate = async (req , res) => {
     });
   }
 }
+
+
+export const handleArticleFileNameUpdate = async (req , res) => {
+  const { articleId, fileName } = req.body; 
+
+  if (!articleId || !fileName) {
+    return res.status(400).json({ message: "articleId and FileName are required" });
+  }
+
+  try {
+    const article = await articleModel.findByIdAndUpdate(
+      articleId, 
+      {fileName : fileName},
+      { new: true } 
+    );
+
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+
+    sendNotification({userId : article?.userId ,message : "Article FileName Updated succesfully"})
+
+
+    return res.status(200).json({
+      message: "Article filename updated successfully",
+      article,
+    });
+  } catch (error) {
+    console.error("Error updating article:", error);
+    return res.status(500).json({
+      message: "Error updating article filename",
+      error: error.message,
+    });
+  }
+}
+
 
 
 // submit
@@ -398,6 +433,36 @@ export const handleGetArticlesById = async (req, res) => {
 };
 
 
+
+
+export const handleArticleDelete = async (req, res) => {
+  try {
+    const { articleId } = req.body; // Or req.body.userId depending on how the request is made
+
+    if (!articleId) {
+      return res.status(400).json({ message: "articleId is required" });
+    }
+
+    // Find all articles associated with the userId
+    const article = await articleModel
+      .findById(articleId)
+
+    if (!article) {
+      return res
+        .status(404)
+        .json({ message: "No articles found for this user" });
+    }
+
+    await articleModel.deleteOne({ _id: articleId });
+
+    return res.status(200).json({ message: "article deleted successfully"});
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
 
 export const determineBestOutletsForArticle = async (req, res) => {
   const { articleId } = req.body;
@@ -583,7 +648,8 @@ export const handleGenerateArticle = async (req, res) => {
       const newArticle = {
         value: finalArticle ,
         userId,
-        selectedTopic : topic
+        selectedTopic : topic,
+        fileName : topic
       };
 
      const createdArticle =  await articleModel.create(newArticle);
@@ -776,3 +842,5 @@ export const handleCreateArticlesSecond = async (req, res) => {
     });
   }
 };
+
+

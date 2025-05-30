@@ -20,7 +20,8 @@ imageRouter.post("/profile", profileMulter.single("file"), async (req, res) => {
   const fileUrl = `${profileFile}${req.file.filename}`; // Correct template literal
 
   try {
-    // Check if there's an existing profile image for the user
+    // Check if there's an existing profile image 
+    // for the user
     const existingImage = await profileImageModel.findOne({
       user: req.body.user,
     });
