@@ -437,7 +437,7 @@ export const handleGetArticlesById = async (req, res) => {
 
 export const handleArticleDelete = async (req, res) => {
   try {
-    const { articleId } = req.body; // Or req.body.userId depending on how the request is made
+      const { articleId } = req.params
 
     if (!articleId) {
       return res.status(400).json({ message: "articleId is required" });

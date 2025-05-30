@@ -29,7 +29,7 @@ articleRouter.post("/fetch-approvedtopics", handleGetApprovedTopics);
 articleRouter.post("/get", handleGetArticlesById);
 articleRouter.post("/article-outlet",determineBestOutletsForArticle)
 articleRouter.post("/generate-article",handleGenerateArticle);
-articleRouter.delete("/delete", handleArticleDelete);
+articleRouter.delete("/delete/:articleId", handleArticleDelete);
 
 
 
