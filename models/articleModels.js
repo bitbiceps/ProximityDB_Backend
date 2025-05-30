@@ -32,8 +32,9 @@ const articleSchema = new mongoose.Schema(
     topicId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Topic", // Reference to the User model/collection
-      required: true, // Ensures every article is associated with a user
+      required: false, // Ensures every article is associated with a user
     },
+    selectedTopic :{type : String , default : null},
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Reference to the Topic model/collection

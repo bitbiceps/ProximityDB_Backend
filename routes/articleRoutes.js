@@ -10,6 +10,7 @@ import {
   determineBestOutletsForArticle,
   handleArticleContentUpdate,
   handleCreateArticlesSecond,
+  handleGenerateArticle
   
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
@@ -25,6 +26,8 @@ articleRouter.put("/submit", handleSubmitArticle);
 articleRouter.post("/fetch-approvedtopics", handleGetApprovedTopics);
 articleRouter.post("/get", handleGetArticlesById);
 articleRouter.post("/article-outlet",determineBestOutletsForArticle)
+articleRouter.post("/generate-article",handleGenerateArticle);
+
 
 
 
