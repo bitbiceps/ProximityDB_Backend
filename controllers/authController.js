@@ -12,7 +12,6 @@ import otpModel from "../models/otpModel.js";
 export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, termsAccepted } = req.body;
-    console.log('body', req.body);
 
     if (!termsAccepted) {
       return res
@@ -38,7 +37,7 @@ export const registerUser = async (req, res) => {
       expiresIn: "4d",
     });
 
-    sendVerificationEmail(email, token);
+    // sendVerificationEmail(email, token);
 
     const newUser = await User.create({
       fullName,
