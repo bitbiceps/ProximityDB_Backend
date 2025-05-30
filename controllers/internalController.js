@@ -6,8 +6,13 @@ import createTask from "../helpers/clickUp.js";
 import { socketEvents } from "../helpers/utils.js";
 import io from "../server.js";
 import { sendNotification } from "../server.js";
-import { sendTopicVerifySuccessfully , sendArticleVerifySuccesfullly } from "../helpers/mailer.js";
+import {
+  sendTopicVerifySuccessfully,
+  sendArticleVerifySuccesfullly,
+} from "../helpers/mailer.js";
 import MessageModel from "../models/messageModal.js";
+import teamMessageModel from "../models/teamMessageModel.js";
+import ticketModel from "../models/ticketModel.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
@@ -69,7 +74,6 @@ export const getAllUsers = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-
     // Get the total number of users using the faster estimatedDocumentCount
     const totalUsers = await userModel.estimatedDocumentCount();
 
@@ -114,8 +118,8 @@ export const getReviewCounts = async (req, res) => {
     const { userId } = req.query;
     // Get the count of articles with status "review"
     const articlesInReview = await articleModel
-    .find({ userId })
-    .populate("topicId", "finalTopic");
+      .find({ userId })
+      .populate("topicId", "finalTopic");
 
     // Get the count of topics with status "review"
     const topicsInReview = await topicModel.find({
@@ -141,19 +145,20 @@ export const handleArticleMarkCompleted = async (req, res) => {
   try {
     const { articleId } = req.body; // Get articleId from the request body
 
-
     // Find the article document by its ID
-    
+
     // Handle case if article is not found
-    const article = await articleModel.findOne({ _id: articleId }).populate('userId');
+    const article = await articleModel
+      .findOne({ _id: articleId })
+      .populate("userId");
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
 
     // Fetch user and topic in parallel (using article.userId and articleId)
     const [user, topic] = await Promise.all([
-      userModel.findById(article.userId), 
-      topicModel.findOne({ articleId })
+      userModel.findById(article.userId),
+      topicModel.findOne({ articleId }),
     ]);
 
     // Handle case if topic is not found
@@ -178,9 +183,12 @@ export const handleArticleMarkCompleted = async (req, res) => {
 
     const articleUrl = `${process.env.FRONTEND_URL_Sec}/generated_article?id=${articleId}`;
 
-    sendNotification({userId : article?.userId?._id || article?.userId , message : 'Article is verified successfully'})
+    sendNotification({
+      userId: article?.userId?._id || article?.userId,
+      message: "Article is verified successfully",
+    });
 
-    await sendArticleVerifySuccesfullly(article.userId.email , articleUrl)
+    await sendArticleVerifySuccesfullly(article.userId.email, articleUrl);
 
     return res.status(200).json({
       message: "Article marked completed",
@@ -190,18 +198,17 @@ export const handleArticleMarkCompleted = async (req, res) => {
     console.error("Error submitting article:", error);
     return res.status(500).json({
       message: "Error submitting article",
-      error: error.message
+      error: error.message,
     });
   }
 };
-
 
 export const handleTopicMarkCompleted = async (req, res) => {
   try {
     const { _id, index } = req.body; // Get the topic _id and index from the request body
 
     // Find the topic document by its _id
-    const topic = await topicModel.findById(_id).populate('userId');
+    const topic = await topicModel.findById(_id).populate("userId");
 
     if (!topic) {
       return res.status(404).json({ message: "Topic not found" });
@@ -220,9 +227,15 @@ export const handleTopicMarkCompleted = async (req, res) => {
     // Save the updated topic document
     await topic.save();
 
-    sendNotification({userId : topic?.userId?._id || topic?.userId , message : 'Topic is verified successfully'})
+    sendNotification({
+      userId: topic?.userId?._id || topic?.userId,
+      message: "Topic is verified successfully",
+    });
 
-    await sendTopicVerifySuccessfully(topic.userId.email , topic.topics[index].value )
+    await sendTopicVerifySuccessfully(
+      topic.userId.email,
+      topic.topics[index].value
+    );
 
     return res.status(200).json({
       message: "Topic marked as completed",
@@ -267,15 +280,15 @@ export const handleSendTeamMessage = async (req, res) => {
     const { userId, message } = req.body;
 
     if (!userId || !message) {
-      return res.status(400).json({ message: "User ID and message are required" });
+      return res
+        .status(400)
+        .json({ message: "User ID and message are required" });
     }
 
     const user = await userModel.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    
 
     const newMessage = new MessageModel({
       userId,
@@ -298,9 +311,9 @@ export const handleSendTeamMessage = async (req, res) => {
 
 export const handleTopicSuggestion = async (req, res) => {
   try {
-    const {msgId ,topicId, status , updatedTopic , content } = req.body;
+    const { msgId, topicId, status, updatedTopic, content } = req.body;
 
-    const topic = await topicModel.findById(topicId).populate('userId');
+    const topic = await topicModel.findById(topicId).populate("userId");
 
     if (!topic) {
       return res.status(400).json({ message: "Topic not found" });
@@ -313,21 +326,21 @@ export const handleTopicSuggestion = async (req, res) => {
     }
 
     if (status === "approved" && updatedTopic) {
-      topic.finalTopic = updatedTopic ;
+      topic.finalTopic = updatedTopic;
       const newTopic = {
         value: updatedTopic,
         updateRequested: false,
         verifyRequested: false,
       };
       topic.status = "completed";
-      message.content = 'Topic request is approved successfully'
+      message.content = "Topic request is approved successfully";
       message.topicContent.topic = updatedTopic;
-      message.topicContent.message = content ;
+      message.topicContent.message = content;
       message.topicContent.status = "approved";
     }
 
-    if(status === 'rejected') {
-      message.content = 'Topic update request rejected'
+    if (status === "rejected") {
+      message.content = "Topic update request rejected";
       message.topicContent.status = "rejected";
     }
 
@@ -357,14 +370,14 @@ export const fetchAllUserMessageList = async (req, res) => {
   try {
     const messagesByUsers = await MessageModel.aggregate([
       {
-        $sort: { createdAt: -1 } // Sort messages globally by latest createdAt
+        $sort: { createdAt: -1 }, // Sort messages globally by latest createdAt
       },
       {
         $group: {
           _id: "$userId", // Group messages by userId
           messages: { $push: "$$ROOT" }, // Push all messages (latest first)
-          latestMessageAt: { $first: "$createdAt" } // Capture the latest message timestamp
-        }
+          latestMessageAt: { $first: "$createdAt" }, // Capture the latest message timestamp
+        },
       },
       {
         $lookup: {
@@ -384,12 +397,12 @@ export const fetchAllUserMessageList = async (req, res) => {
           "userData.email": 1,
           "userData.fullName": 1,
           messages: { $reverseArray: "$messages" }, // Reverse to get oldest-to-newest order
-          latestMessageAt: 1
+          latestMessageAt: 1,
         },
       },
       {
-        $sort: { latestMessageAt: -1 } // Sort users by latest message time (descending)
-      }
+        $sort: { latestMessageAt: -1 }, // Sort users by latest message time (descending)
+      },
     ]);
 
     return res.status(200).json({
@@ -405,36 +418,36 @@ export const fetchAllUserMessageList = async (req, res) => {
   }
 };
 
-
 export const handleReadMessage = async (req, res) => {
   try {
-    const {userId} = req.body ;
-    const messagesToUpdate = await MessageModel.find({ userId , status: "sent", read: false })
-      .sort({ createdAt: -1 }); // Sort by latest first
+    const { userId } = req.body;
+    const messagesToUpdate = await MessageModel.find({
+      userId,
+      status: "sent",
+      read: false,
+    }).sort({ createdAt: -1 }); // Sort by latest first
 
     if (!messagesToUpdate.length) {
       return res.status(200).json({ message: "No unread sent messages found" });
     }
 
     // Extract message IDs
-    const messageIds = messagesToUpdate.map(msg => msg._id);
+    const messageIds = messagesToUpdate.map((msg) => msg._id);
 
     // Update all found messages to mark them as read
     await MessageModel.updateMany(
-      { _id: { $in: messageIds } }, 
+      { _id: { $in: messageIds } },
       { $set: { read: true } }
     );
 
-    return res.status(200).json({ 
-      message: `Marked ${messageIds.length} messages as read successfully` 
+    return res.status(200).json({
+      message: `Marked ${messageIds.length} messages as read successfully`,
     });
-
   } catch (error) {
     console.error("Error marking messages as read:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 export const handleSelectOutlet = async (req, res) => {
   try {
@@ -453,5 +466,118 @@ export const handleSelectOutlet = async (req, res) => {
     res.status(200).json({ message: "Outlet selected successfully", article });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Create a new ticket
+export const createTicket = async (req, res) => {
+  try {
+    const { userId, subject, description } = req.body;
+
+    if (!userId || !subject || !description) {
+      return res.status(400).json({ error: 'userId, subject, and description are required' });
+    }
+
+    const ticket = await ticketModel.create({ userId, subject, description });
+
+    res.status(201).json({ message: 'Ticket created', ticket });
+  } catch (err) {
+    console.error('createTicket error:', err);
+    res.status(500).json({ error: 'Failed to create ticket', details: err.message });
+  }
+};
+
+// List tickets (all for team, or user-specific)
+export const listTickets = async (req, res) => {
+  try {
+    const { userId, isTeam } = req.query;
+
+    if (!isTeam && !userId) {
+      return res.status(400).json({ error: 'userId is required if not fetching for team' });
+    }
+
+    const tickets = isTeam === 'true'
+      ? await ticketModel.find().sort({ createdAt: -1 })
+      : await ticketModel.find({ userId }).sort({ createdAt: -1 });
+
+    res.status(200).json(tickets);
+  } catch (err) {
+    console.error('listTickets error:', err);
+    res.status(500).json({ error: 'Failed to fetch tickets', details: err.message });
+  }
+};
+
+// Get messages for a ticket
+export const getMessages = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+
+    if (!ticketId) {
+      return res.status(400).json({ error: 'ticketId is required' });
+    }
+
+    const messages = await teamMessageModel
+      .find({ ticketId })
+      .sort({ createdAt: 1 });
+
+    res.status(200).json(messages);
+  } catch (err) {
+    console.error('getMessages error:', err);
+    res.status(500).json({ error: 'Failed to fetch messages', details: err.message });
+  }
+};
+
+// Post a message on a ticket
+export const postMessage = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { senderId, senderRole, text } = req.body;
+
+    if (!ticketId || !senderId || !senderRole || !text) {
+      return res.status(400).json({ error: 'ticketId, senderId, senderRole, and text are required' });
+    }
+
+    const message = await teamMessageModel.create({
+      ticketId,
+      senderId,
+      senderRole,
+      text,
+      readBy: [senderId],
+    });
+
+    res.status(201).json({ message: 'Message posted', data: message });
+  } catch (err) {
+    console.error('postMessage error:', err);
+    res.status(500).json({ error: 'Failed to send message', details: err.message });
+  }
+};
+
+// Close a ticket
+export const closeTicket = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+
+    if (!ticketId) {
+      return res.status(400).json({ error: 'ticketId is required' });
+    }
+
+    const ticket = await ticketModel.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.status === 'closed') {
+      return res.status(400).json({ error: 'Ticket is already closed' });
+    }
+
+    ticket.status = 'closed';
+    ticket.updatedAt = new Date();
+
+    await ticket.save();
+
+    res.status(200).json({ message: 'Ticket closed successfully', ticket });
+  } catch (err) {
+    console.error('closeTicket error:', err);
+    res.status(500).json({ error: 'Failed to close ticket', details: err.message });
   }
 };
