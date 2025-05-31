@@ -37,7 +37,7 @@ export const registerUser = async (req, res) => {
       expiresIn: "4d",
     });
 
-    // sendVerificationEmail(email, token);
+    sendVerificationEmail(email, token);
 
     const newUser = await User.create({
       fullName,
