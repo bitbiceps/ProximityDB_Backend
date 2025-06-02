@@ -122,7 +122,7 @@ export const sendVerificationEmail = async (to, verificationToken) => {
                 
                 <a href="${
                   process.env.FRONTEND_URL
-                }verify/${verificationToken}" class="verification-button">
+                }/verify/${verificationToken}" class="verification-button">
                   Verify Email Address
                 </a>
                 
