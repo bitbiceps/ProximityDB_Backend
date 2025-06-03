@@ -34,7 +34,10 @@ router.get('/logout',handleLogout)
 // Google OAuth start
 router.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    prompt: "select_account",
+  })
 );
 
 // Google OAuth callback
@@ -45,7 +48,7 @@ router.get(
 );
 
 // 🔐 Start LinkedIn auth
-router.get("/linkedin", passport.authenticate("linkedin"));
+router.get("/linkedin", passport.authenticate("linkedin", { prompt: "login" }));
 
 // 🌀 LinkedIn callback
 router.get(
