@@ -214,7 +214,6 @@ export const handleArticleUpdateRequested = async (req, res) => {
 export const handleArticleContentUpdate = async (req , res) => {
   const { articleId, content } = req.body; 
 
-  // Validate the input data
   if (!articleId || !content) {
     return res.status(400).json({ message: "articleId and content are required" });
   }
@@ -252,6 +251,42 @@ export const handleArticleContentUpdate = async (req , res) => {
     });
   }
 }
+
+
+export const handleArticleFileNameUpdate = async (req , res) => {
+  const { articleId, fileName } = req.body; 
+
+  if (!articleId || !fileName) {
+    return res.status(400).json({ message: "articleId and FileName are required" });
+  }
+
+  try {
+    const article = await articleModel.findByIdAndUpdate(
+      articleId, 
+      {fileName : fileName},
+      { new: true } 
+    );
+
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+
+    sendNotification({userId : article?.userId ,message : "Article FileName Updated succesfully"})
+
+
+    return res.status(200).json({
+      message: "Article filename updated successfully",
+      article,
+    });
+  } catch (error) {
+    console.error("Error updating article:", error);
+    return res.status(500).json({
+      message: "Error updating article filename",
+      error: error.message,
+    });
+  }
+}
+
 
 
 // submit
@@ -399,6 +434,36 @@ export const handleGetArticlesById = async (req, res) => {
 
 
 
+
+export const handleArticleDelete = async (req, res) => {
+  try {
+      const { articleId } = req.params
+
+    if (!articleId) {
+      return res.status(400).json({ message: "articleId is required" });
+    }
+
+    // Find all articles associated with the userId
+    const article = await articleModel
+      .findById(articleId)
+
+    if (!article) {
+      return res
+        .status(404)
+        .json({ message: "No articles found for this user" });
+    }
+
+    await articleModel.deleteOne({ _id: articleId });
+
+    return res.status(200).json({ message: "article deleted successfully"});
+  } catch (error) {
+    console.error(error.message);
+    return res
+      .status(500)
+      .json({ message: "An error occurred", error: error.message });
+  }
+};
+
 export const determineBestOutletsForArticle = async (req, res) => {
   const { articleId } = req.body;
 
@@ -435,8 +500,178 @@ export const determineBestOutletsForArticle = async (req, res) => {
   }
 };
 
+
+
+export const handleGenerateArticle = async (req, res) => {
+  const { userId , topic } = req.body;
+
+  try {
+    const user = await userModel
+      .findById(userId)
+      .select({
+        "questionnaire.basicInformation": 1,
+        "questionnaire.expertiseAndSkills": 1,
+        "questionnaire.challengesAndGaps": 1,
+        "questionnaire.impactAndAchievements": 1,
+        "questionnaire.industryContextAndInsights": 1,
+        "fullName": 1,
+      })
+
+
+      // Retrieve the questionnaire answers from the user
+      const questions = [
+        {
+          question: user.questionnaire.basicInformation[1].question,
+          answer: user.questionnaire.basicInformation[1].answer,
+        },
+        {
+          question: user.questionnaire.basicInformation[2].question,
+          answer: user.questionnaire.basicInformation[2].answer,
+        },
+        {
+          question: user.questionnaire.basicInformation[3].question,
+          answer: user.questionnaire.basicInformation[3].answer,
+        },
+        {
+          question: user.questionnaire.expertiseAndSkills[1]?.question,
+          answer: user.questionnaire.expertiseAndSkills[1]?.answer,
+        },
+        {
+          question: user.questionnaire.expertiseAndSkills[2]?.question,
+          answer: user.questionnaire.expertiseAndSkills[2]?.answer,
+        },
+        {
+          question: user.questionnaire.expertiseAndSkills[3]?.question,
+          answer: user.questionnaire.expertiseAndSkills[3]?.answer,
+        },
+        {
+          question: user.questionnaire.expertiseAndSkills[4]?.question,
+          answer: user.questionnaire.expertiseAndSkills[4]?.answer,
+        },
+        {
+          question: user.questionnaire.challengesAndGaps[1]?.question,
+          answer: user.questionnaire.challengesAndGaps[1]?.answer,
+        },
+        {
+          question: user.questionnaire.challengesAndGaps[2]?.question,
+          answer: user.questionnaire.challengesAndGaps[2]?.answer,
+        },
+        {
+          question: user.questionnaire.challengesAndGaps[3]?.question,
+          answer: user.questionnaire.challengesAndGaps[3]?.answer,
+        },
+        {
+          question: user.questionnaire.impactAndAchievements[1]?.question,
+          answer: user.questionnaire.impactAndAchievements[1]?.answer,
+        },
+        {
+          question: user.questionnaire.impactAndAchievements[2]?.question,
+          answer: user.questionnaire.impactAndAchievements[2]?.answer,
+        },
+        {
+          question: user.questionnaire.impactAndAchievements[3]?.question,
+          answer: user.questionnaire.impactAndAchievements[3]?.answer,
+        },
+        {
+          question: user.questionnaire.impactAndAchievements[4]?.question,
+          answer: user.questionnaire.impactAndAchievements[4]?.answer,
+        },
+        {
+          question: user.questionnaire.impactAndAchievements[5]?.question,
+          answer: user.questionnaire.impactAndAchievements[5]?.answer,
+        },
+        {
+          question: user.questionnaire.impactAndAchievements[6]?.question,
+          answer: user.questionnaire.impactAndAchievements[6]?.answer,
+        },
+        {
+          question: user.questionnaire.industryContextAndInsights[1]?.question,
+          answer: user.questionnaire.industryContextAndInsights[1]?.answer,
+        },
+        {
+          question: user.questionnaire.industryContextAndInsights[2]?.question,
+          answer: user.questionnaire.industryContextAndInsights[2]?.answer,
+        },
+        {
+          question: user.questionnaire.industryContextAndInsights[3]?.question,
+          answer: user.questionnaire.industryContextAndInsights[3]?.answer,
+        },
+      ].filter((entry) => entry.answer && entry.answer.length > 4);
+
+      const userPlaceholder = user.fullName || 'user';
+
+      // Single API call to generate the article
+      const promptContent = `
+        **Objective:**  
+        Write a professional, engaging, and insightful article about the topic: **${topic}**.  
+        The article must strictly include the user's answers and refer to them naturally throughout the content.  
+        Maintain a balance of **60% topic focus and 40% user focus**.  
+        Write in the **third person**, referring to the user by their name (${userPlaceholder}). Do not use "I" or "me."
+
+          **Instructions:**  
+        1. Start with a compelling introduction to the topic and its significance in the industry.  
+        2. Introduce ${userPlaceholder} naturally, mentioning their role and background.  
+        3. Use the user's answers to highlight their expertise, challenges, and contributions.  
+        4. Refer to ${userPlaceholder} by name throughout the article. Do not use "I" or "me."  
+        5. Provide knowledgeable insights about the topic while integrating the user's answers.  
+        6. Conclude with actionable takeaways for professionals in the field.  
+
+        **User Information:**  
+        - Name: ${userPlaceholder}  
+        - Role: ${user.questionnaire.basicInformation[2].answer}  
+        - Company/Organization: ${user.questionnaire.basicInformation[3].answer}  
+
+        **User Responses:**  
+        ${questions
+          .map((item, index) => `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${item.answer}`)
+          .join("\n\n")}
+      `;
+
+      const response = await openAi.writer.chat.completions.create({
+        model: openAi.model,
+        messages: [
+          {
+            role: "system",
+            content: promptContent,
+          },
+          {
+            role: "user",
+            content : promptContent
+          },
+        ],
+        max_tokens: 1200,
+        temperature: 0.7,
+      });
+
+      const finalArticle = response.choices[0].message.content.trim();
+
+      const newArticle = {
+        value: finalArticle ,
+        userId,
+        selectedTopic : topic,
+        fileName : topic
+      };
+
+     const createdArticle =  await articleModel.create(newArticle);
+
+     const responseJson = {
+      ...newArticle ,
+      _id : createdArticle?._id
+     }
+
+      return res.status(200).json(responseJson);
+  } catch (error) {
+    console.error("Error generating articles:", error);
+    return res.status(500).json({
+      message: "An error occurred while generating the article",
+      error: error.message,
+    });
+  }
+};
+
+
 export const handleCreateArticlesSecond = async (req, res) => {
-  const { _id: topicId, userId } = req.body;
+  const { _id: topicId , userId } = req.body;
 
   const saveArticles = await articleModel.findOne({ topicId }).populate("profileImage topicId");
 
@@ -607,3 +842,5 @@ export const handleCreateArticlesSecond = async (req, res) => {
     });
   }
 };
+
+

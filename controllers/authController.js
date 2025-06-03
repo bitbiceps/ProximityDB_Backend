@@ -29,6 +29,14 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Verification email sent" });
     }
 
+    // const existingPhoneNumber = await User.findOne({ phoneNumber });
+    // if (existingPhoneNumber) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "Phone number is already registered" });
+    // }
+
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     sendVerificationEmail(email, token);
@@ -37,7 +45,6 @@ export const registerUser = async (req, res) => {
       fullName,
       email,
       password: hashedPassword,
-      phoneNumber: "",
       termsAccepted,
       paymentStatus: true,
     });

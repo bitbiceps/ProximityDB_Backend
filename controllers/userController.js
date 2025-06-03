@@ -8,13 +8,16 @@ export const getFullUserDetails = async (req, res) => {
   }
   try {
     const user = await userModel.findById(id).populate("profileImage");
-    res.status(200).json({ message: "Success", user });
+    res.status(200).json({ message: "Success", user , userId : id });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 export const updateUserProfileData = async (req, res) => {
   const { user: id, fields , basicQuestionnaire} = req.body;
+
+  console.log('fields',fields);
 
   if (!id) {
     return res.status(400).json({ message: "User id is mandatory" });
@@ -28,7 +31,7 @@ export const updateUserProfileData = async (req, res) => {
     // Find the user by ID
     const user = await userModel
       .findById(id)
-      .select("email fullName phoneNumber dateOfBirth gender");
+      .select("email fullName phoneNumber dateOfBirth gender industry jobTitle company");
 
     // If user is not found, return an error
     if (!user) {
@@ -38,18 +41,18 @@ export const updateUserProfileData = async (req, res) => {
     // Manually update only the fields that exist in the `fields` object
     Object.keys(fields).forEach((field) => {
       // Only update the field if it exists in the user model schema
-      if (user.toObject().hasOwnProperty(field)) {
+      if (user.schema.paths[field]) {
         user[field] = fields[field];
       }
     });
 
-    if(basicQuestionnaire && basicQuestionnaire.length === 3) {
-      basicQuestionnaire.forEach((value , index) => {
-        if (user.questionnaire.basicInformation[index+1]) {
-          user.questionnaire.basicInformation[index+1].answer = value;
-        }
-      });
-    }
+    // if(basicQuestionnaire && basicQuestionnaire.length === 3) {
+    //   basicQuestionnaire.forEach((value , index) => {
+    //     if (user.questionnaire.basicInformation[index+1]) {
+    //       user.questionnaire.basicInformation[index+1].answer = value;
+    //     }
+    //   });
+    // }
 
 
     // Save the updated user

@@ -8,7 +8,6 @@ import MessageModel from "../models/messageModal.js";
 export const handleTopicCreation = async (req, res) => {
   try {
     const { numberOfArticles, userId } = req.body;
-
     const user = await userModel
       .findById(userId)
       .select({
@@ -20,12 +19,12 @@ export const handleTopicCreation = async (req, res) => {
       })
       .populate("topics");
 
-    // Check if topics already exist for the user
-    if (user.topics.length) {
-      return res
-        .status(200)
-        .json({ message: "Topics found", data: user.topics });
-    }
+    // // Check if topics already exist for the user
+    // if (user.topics.length) {
+    //   return res
+    //     .status(200)
+    //     .json({ message: "Topics found", data: user.topics });
+    // }
 
     const questions = [
       user.questionnaire.basicInformation[1].answer,
@@ -60,7 +59,7 @@ export const handleTopicCreation = async (req, res) => {
       .join("\n")}`;
 
     // Generate topics for each article and save them
-    for (let i = 0; i < numberOfArticles; i++) {
+    for (let i = 0; i < 1 ; i++) {
       const response = await openAi.writer.chat.completions.create({
         model: openAi.model,
         messages: [

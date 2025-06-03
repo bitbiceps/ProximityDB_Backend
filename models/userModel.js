@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     status: { type: String, default: "pending" },
     dateOfBirth : {type : Date , default : null},
+    industry: { type: String, required: false },
+    jobTitle: { type: String, required: false },
+    company: { type: String, required: false },
     profileImage: {
       type: mongoose.Types.ObjectId,
       ref: "ProfileImage",
