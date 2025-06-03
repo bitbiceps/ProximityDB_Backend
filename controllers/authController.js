@@ -19,27 +19,28 @@ export const registerUser = async (req, res) => {
         .json({ message: "You must agree to the terms and conditions." });
     }
 
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+      expiresIn: "30m",
+    });
+
     const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({ message: "Email is already registered" });
+    if (!existingEmail.isVerified) {
+      sendVerificationEmail(existingEmail.email, token);
+      return res.status(400).json({ message: "Verification email sent" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: "4d",
-    });
 
-    // sendVerificationEmail(email, token);
+    sendVerificationEmail(email, token);
 
     const newUser = await User.create({
       fullName,
       email,
       password: hashedPassword,
-      phoneNumber:"",
+      phoneNumber: "",
       termsAccepted,
       paymentStatus: true,
     });
-
 
     return await res
       .status(201)
@@ -104,9 +105,9 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "User does not exists" });
     }
 
-    if(!user.isVerified) {
-      return res.status(400).json({ message: "User is not verified" }); 
-      }
+    if (!user.isVerified) {
+      return res.status(400).json({ message: "User is not verified" });
+    }
     // io.emit(socketEvents.TEST__BROADCAST, {
     //   message: "Socket working successfully",
     // });
