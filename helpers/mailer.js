@@ -1,5 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" }); // This should be at the very top
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({

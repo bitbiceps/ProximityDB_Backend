@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../models/userModel.js";
 import userModel from "../models/userModel.js";
 import {
   sendPasswordResetEmail,
@@ -23,25 +22,24 @@ export const registerUser = async (req, res) => {
       expiresIn: "30m",
     });
 
-    const existingEmail = await User.findOne({ email });
+    const existingEmail = await userModel.findOne({ email });
     if (!existingEmail.isVerified) {
       sendVerificationEmail(existingEmail.email, token);
       return res.status(400).json({ message: "Verification email sent" });
     }
 
-    // const existingPhoneNumber = await User.findOne({ phoneNumber });
+    // const existingPhoneNumber = await userModel.findOne({ phoneNumber });
     // if (existingPhoneNumber) {
     //   return res
     //     .status(400)
     //     .json({ message: "Phone number is already registered" });
     // }
 
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     sendVerificationEmail(email, token);
 
-    const newUser = await User.create({
+    const newUser = await userModel.create({
       fullName,
       email,
       password: hashedPassword,
@@ -55,7 +53,7 @@ export const registerUser = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Error registering user", error: error.message });
+      .json({ message: "Error registering userModel", error: error.message });
   }
 };
 
@@ -77,21 +75,21 @@ export const verifyEmail = async (req, res) => {
         .json({ message: "Invalid or expired token", error: error.message });
     }
 
-    // Find the user by the email encoded in the token
-    const user = await User.findOne({ email: decoded.email });
+    // Find the userModel by the email encoded in the token
+    const userModel = await userModel.findOne({ email: decoded.email });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!userModel) {
+      return res.status(404).json({ message: "userModel not found" });
     }
 
-    // Check if the user is already verified
-    if (user.isVerified) {
-      return res.status(400).json({ message: "User is already verified" });
+    // Check if the userModel is already verified
+    if (userModel.isVerified) {
+      return res.status(400).json({ message: "userModel is already verified" });
     }
 
-    // Verify the user
-    user.isVerified = true;
-    await user.save();
+    // Verify the userModel
+    userModel.isVerified = true;
+    await userModel.save();
 
     // Send a success response
     res.status(200).json({ message: "Email verified. You can now log in." });
@@ -107,33 +105,39 @@ export const verifyEmail = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).populate("topics profileImage");
-    if (!user) {
-      return res.status(400).json({ message: "User does not exists" });
+    const userModel = await userModel
+      .findOne({ email })
+      .populate("topics profileImage");
+    if (!userModel) {
+      return res.status(400).json({ message: "userModel does not exists" });
     }
 
-    if (!user.isVerified) {
-      return res.status(400).json({ message: "User is not verified" });
+    if (!userModel.isVerified) {
+      return res.status(400).json({ message: "userModel is not verified" });
     }
     // io.emit(socketEvents.TEST__BROADCAST, {
     //   message: "Socket working successfully",
     // });
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, userModel.password);
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    const accessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "2h",
-    });
+    const accessToken = jwt.sign(
+      { userId: userModel._id },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "2h",
+      }
+    );
 
     const refreshToken = "";
     res.status(200).json({
       message: "Login successful",
       tokens: { accessToken, refreshToken },
-      userId: user._id,
-      user: user,
+      userId: userModel._id,
+      userModel: userModel,
     });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });
@@ -141,18 +145,18 @@ export const loginUser = async (req, res) => {
 };
 export const getUserArticles = async (req, res) => {
   try {
-    const { userId } = req.params; // User ID should be passed as a parameter
+    const { userId } = req.params; // userModel ID should be passed as a parameter
 
-    // Fetch the user and populate their articles
-    const user = await User.findById(userId).populate("articles");
+    // Fetch the userModel and populate their articles
+    const userModel = await userModel.findById(userId).populate("articles");
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!userModel) {
+      return res.status(404).json({ message: "userModel not found" });
     }
 
     res.status(200).json({
       message: "UPdated Articles fetched successfully",
-      articles: user,
+      articles: userModel,
     });
   } catch (error) {
     res
@@ -174,15 +178,15 @@ export const checkAuth = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { userId } = decoded;
 
-    // Find the user from the database by userId
-    const user = await userModel.findById(userId);
+    // Find the userModel from the database by userId
+    const userModel = await userModel.findById(userId);
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!userModel) {
+      return res.status(404).json({ message: "userModel not found" });
     }
 
-    // Return the user data if found
-    return res.status(200).json(user);
+    // Return the userModel data if found
+    return res.status(200).json(userModel);
   } catch (error) {
     return res.status(401).json({ message: "Not Authorized" });
   }
@@ -191,10 +195,10 @@ export const checkAuth = async (req, res) => {
 export const handleResetPassword = async (req, res) => {
   try {
     const { email } = req.body; // Email is provided in the request body
-    const user = await userModel.findOne({ email });
+    const userModel = await userModel.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ error: "User does not exist." });
+    if (!userModel) {
+      return res.status(404).json({ error: "userModel does not exist." });
     }
 
     // Generate a simple OTP
@@ -240,19 +244,19 @@ export const handleVerifyOtp = async (req, res) => {
       return res.status(400).json({ error: "OTP has expired." });
     }
 
-    // OTP is valid, find the user (employee)
-    const user = await userModel.findOne({ email }).exec();
+    // OTP is valid, find the userModel (employee)
+    const userModel = await userModel.findOne({ email }).exec();
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found." });
+    if (!userModel) {
+      return res.status(404).json({ error: "userModel not found." });
     }
 
-    // OTP is valid and user is found, you can proceed with password reset logic here
+    // OTP is valid and userModel is found, you can proceed with password reset logic here
     // For example, you can update the password here
-    // user.password = newPassword; // Set new password (hashed)
-    // await user.save();
+    // userModel.password = newPassword; // Set new password (hashed)
+    // await userModel.save();
 
-    // Respond with success message (user found and OTP verified)
+    // Respond with success message (userModel found and OTP verified)
     await otpModel.deleteOne({ email });
     return res.status(200).json({ message: "OTP verified successfully." });
   } catch (error) {
@@ -276,22 +280,22 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({ message: "Email cannot be empty." });
     }
 
-    // Find the user by email
-    const user = await userModel.findOne({ email });
+    // Find the userModel by email
+    const userModel = await userModel.findOne({ email });
 
-    // If user is not found
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
+    // If userModel is not found
+    if (!userModel) {
+      return res.status(404).json({ message: "userModel not found." });
     }
 
     // Hash the new password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Update the user's password
-    user.password = hashedPassword;
+    // Update the userModel's password
+    userModel.password = hashedPassword;
 
-    // Save the updated user
-    await user.save();
+    // Save the updated userModel
+    await userModel.save();
 
     // Return success response
     return res.status(200).json({ message: "Password updated successfully." });
@@ -300,5 +304,73 @@ export const changePassword = async (req, res) => {
     return res
       .status(500)
       .json({ error: "Failed to change password. " + error.message });
+  }
+};
+
+export const handleGoogleLogin = async (req, res) => {
+  try {
+    const googleUser = req.user; // <-- This is the Passport user object
+
+    if (!googleUser) {
+      return res
+        .status(400)
+        .json({ message: "No user info found from Google" });
+    }
+
+    console.log("Google profile:", googleUser);
+
+    const email =
+      googleUser.emails && googleUser.emails.length > 0
+        ? googleUser.emails[0].value
+        : null;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ message: "Email not found in Google profile" });
+    }
+
+    const fullName = googleUser.displayName || "No Name";
+
+    let user = await userModel.findOne({ email });
+
+    if (user) {
+      if (!user.isVerified) {
+        user.isVerified = true;
+        await user.save();
+      }
+    } else {
+      user = await userModel.create({
+        fullName,
+        email,
+        password: null, // no password for Google login
+        termsAccepted: true,
+        isVerified: true,
+        paymentStatus: true,
+      });
+    }
+
+    const token = jwt.sign(
+      { email: user.email, id: user._id },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
+
+    return res.status(200).json({
+      message: "Google login successful",
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+    return res
+      .status(500)
+      .json({ message: "Google login failed", error: error.message });
   }
 };

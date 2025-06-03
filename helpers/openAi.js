@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" }); // This should be at the very top
-
+import "dotenv/config"
 import OpenAI from "openai";
 
 const writer = new OpenAI({

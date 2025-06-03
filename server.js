@@ -12,6 +12,9 @@ import imageRouter from "./routes/imageRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import http from "http";
 import { Server } from "socket.io";
+import session from "express-session";
+import passport from "./passport.js";
+import "dotenv/config"
 
 const app = express();
 let userSockets = {}; // To keep track of connected users by their socket ID
@@ -25,11 +28,20 @@ mongoose
   .then(() => console.log("Database connected successfully!!"))
   .catch((err) => console.log("Error connecting to database", err));
 
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }  // true only on HTTPS
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 // Middleware
 app.use(cors({ origin: "*" }));
 app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 app.use("/pay", express.json(), paymentRoutes);
-app.use("/api/auth", express.json(), authRoutes);
+app.use("/auth", express.json(), authRoutes);
 app.use("/article", express.json(), articleRouter);
 app.use("/topic", express.json(), topicRouter);
 app.use("/internal", express.json(), internalRouter);
@@ -76,7 +88,7 @@ io.on("connection", (socket) => {
   });
 });
 
-export const sendNotification = ({userId, message}) => {
+export const sendNotification = ({ userId, message }) => {
   if (userSockets[userId]) {
     io.to(userSockets[userId]).emit("notification", message);
     console.log(`Notification sent to user ${userId}: ${message}`);
@@ -94,15 +106,11 @@ app.get("/", async (req, res) => {
   }
 });
 
-
 const PORT = process.env.PORT || 3000; // Prod
 // const PORT = process.env.STAGE || 3000;// Stage
-
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-
 
 export default io;
