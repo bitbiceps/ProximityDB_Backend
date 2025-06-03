@@ -102,47 +102,84 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+
+const generateTokens = (user) => {
+  const accessToken = jwt.sign(
+    { userId: user._id },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "2h",
+    }
+  );
+
+  const refreshToken = jwt.sign(
+    { userId: user._id , fullName : user.fullName },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "3d",
+    }
+  );
+
+  return {accessToken , refreshToken};
+}
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const userModel = await userModel
+    const user = await userModel
       .findOne({ email })
       .populate("topics profileImage");
-    if (!userModel) {
+    if (!user) {
       return res.status(400).json({ message: "userModel does not exists" });
     }
 
-    if (!userModel.isVerified) {
+    if (!user.isVerified) {
       return res.status(400).json({ message: "userModel is not verified" });
     }
-    // io.emit(socketEvents.TEST__BROADCAST, {
-    //   message: "Socket working successfully",
-    // });
-
-    const isPasswordValid = await bcrypt.compare(password, userModel.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    const accessToken = jwt.sign(
-      { userId: userModel._id },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "2h",
-      }
+    const {accessToken , refreshToken } = generateTokens(user);
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      user._id,
+      { 
+        $set: { 
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        } 
+      },
+      { new: true }
     );
 
-    const refreshToken = "";
+ 
+      res.cookie('accessToken', accessToken , {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'strict',
+      });
+
+      res.cookie('refreshToken', refreshToken , {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 3 * 24 * 60 * 60 * 1000,
+        sameSite: 'strict',
+      });
+
     res.status(200).json({
       message: "Login successful",
       tokens: { accessToken, refreshToken },
-      userId: userModel._id,
-      userModel: userModel,
+      userId: user._id,
+      user: user,
     });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });
   }
 };
+
 export const getUserArticles = async (req, res) => {
   try {
     const { userId } = req.params; // userModel ID should be passed as a parameter
@@ -153,6 +190,8 @@ export const getUserArticles = async (req, res) => {
     if (!userModel) {
       return res.status(404).json({ message: "userModel not found" });
     }
+
+
 
     res.status(200).json({
       message: "UPdated Articles fetched successfully",
@@ -167,26 +206,16 @@ export const getUserArticles = async (req, res) => {
 
 export const checkAuth = async (req, res) => {
   try {
-    // Extract token from the Authorization header or body (you can adjust as needed)
-    const { token } = req.body;
-
-    if (!token) {
-      return res.status(401).json({ message: "No token provided" });
+    if (!req.user) {
+      return res.status(401).json({ message: "User does not exist" });
     }
 
-    // Verify and decode the token (use jwt.verify instead of jwt.decode for security)
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { userId } = decoded;
+    return res.status(200).json({
+      message : "Authorized",
+      user : req.user,
+      userId : req.userId
+    });
 
-    // Find the userModel from the database by userId
-    const userModel = await userModel.findById(userId);
-
-    if (!userModel) {
-      return res.status(404).json({ message: "userModel not found" });
-    }
-
-    // Return the userModel data if found
-    return res.status(200).json(userModel);
   } catch (error) {
     return res.status(401).json({ message: "Not Authorized" });
   }
@@ -350,23 +379,24 @@ export const handleGoogleLogin = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      { email: user.email, id: user._id },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
-    );
+    const {accessToken  , refreshToken } = generateTokens(user);
 
-    return res.status(200).json({
-      message: "Google login successful",
-      token,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-      },
+    res.cookie('accessToken', accessToken , {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'strict',
+      });
+
+    res.cookie('refreshToken', refreshToken , {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 3 * 24 * 60 * 60 * 1000,
+        sameSite: 'strict',
     });
+
+    res.redirect(`${process.env.FRONTEND_URL}`);
+
   } catch (error) {
     console.error("Google login error:", error);
     return res
@@ -415,5 +445,47 @@ export const handleLinkedInLogin = async (req, res) => {
   } catch (error) {
     console.error('LinkedIn login error:', error);
     return res.status(500).json({ message: 'LinkedIn login failed', error: error.message });
+  }
+};
+
+
+export const handleLogout = async (req, res) => {
+  try {
+    const userId = req.userId;
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    if (userId) {
+      await userModel.findByIdAndUpdate(userId, {
+        $unset: {
+          accessToken: 1,
+          refreshToken: 1
+        },
+      });
+    }
+
+    res.status(200).json({
+      message: "Logout successful",
+      code: "LOGOUT_SUCCESS"
+    });
+
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({
+      message: "Logout failed",
+      code: "LOGOUT_ERROR",
+      error: error.message
+    });
   }
 };

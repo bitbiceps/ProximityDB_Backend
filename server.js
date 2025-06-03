@@ -14,7 +14,10 @@ import http from "http";
 import { Server } from "socket.io";
 import session from "express-session";
 import passport from "./passport.js";
-import "dotenv/config"
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+
+dotenv.config({ path: '.env.local' });
 
 const app = express();
 let userSockets = {}; // To keep track of connected users by their socket ID
@@ -35,10 +38,11 @@ app.use(session({
   cookie: { secure: false }  // true only on HTTPS
 }));
 
+app.use(cookieParser())
 app.use(passport.initialize());
 app.use(passport.session());
 // Middleware
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: true, credentials: true }));
 app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 app.use("/pay", express.json(), paymentRoutes);
 app.use("/auth", express.json(), authRoutes);
@@ -54,7 +58,7 @@ app.use("/user", express.json(), userRouter);
 const server = http.createServer(app); // Create an HTTP server from the Express app
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow connections from all origins
+    origin: "*", 
     methods: ["GET", "POST"],
   },
 });

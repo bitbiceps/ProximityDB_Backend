@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     phoneNumber: { type: String, required: false },
     planId: { type: Number, default: 0 },
     paymentStatus: { type: Boolean, default: false },
@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema(
     },
     numberOfReviews:{type:Number, default:0},
     gender: { type: String, default: null },
+    accessToken : {type : String , default : null},
+    refreshToken : {type : String , default : null},
     // Use a sub-schema for the questionnaire
     questionnaire: {
       basicInformation: {
