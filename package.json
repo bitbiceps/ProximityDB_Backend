@@ -32,6 +32,7 @@
     "openai": "^4.76.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "passport-linkedin-oauth2": "^2.0.0",
     "socket.io": "^4.8.1",
     "stripe": "^17.4.0",
     "uuid": "^11.0.4",

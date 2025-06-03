@@ -9,6 +9,7 @@ import {
   handleVerifyOtp,
   changePassword,
   handleGoogleLogin,
+  handleLinkedInLogin,
 } from "../controllers/authController.js";
 import {
   validateRegistration,
@@ -36,8 +37,21 @@ router.get(
 // Google OAuth callback
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/" }),
+  passport.authenticate("google", { failureRedirect: "/login" }),
   handleGoogleLogin
+);
+
+// 🔐 Start LinkedIn auth
+router.get("/linkedin", passport.authenticate("linkedin"));
+
+// 🌀 LinkedIn callback
+router.get(
+  "/linkedin/callback",
+  passport.authenticate("linkedin", {
+    failureRedirect: "/login", // or wherever your frontend handles failed logins
+    session: false,
+  }),
+  handleLinkedInLogin
 );
 
 // // Logout route

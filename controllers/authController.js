@@ -374,3 +374,46 @@ export const handleGoogleLogin = async (req, res) => {
       .json({ message: "Google login failed", error: error.message });
   }
 };
+
+
+export const handleLinkedInLogin = async (req, res) => {
+  try {
+    const linkedInUser = req.user;
+    console.log("LinkedIn profile:", linkedInUser);
+
+    const email = linkedInUser.emails?.[0]?.value;
+    const fullName = linkedInUser.displayName;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        fullName,
+        email,
+        password: null,
+        termsAccepted: true,
+        isVerified: true,
+        paymentStatus: true,
+      });
+    }
+
+    const token = jwt.sign(
+      { email: user.email, id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    return res.status(200).json({
+      message: 'LinkedIn login successful',
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error('LinkedIn login error:', error);
+    return res.status(500).json({ message: 'LinkedIn login failed', error: error.message });
+  }
+};
