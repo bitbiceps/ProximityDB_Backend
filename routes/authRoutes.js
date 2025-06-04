@@ -48,7 +48,7 @@ router.get(
 );
 
 // 🔐 Start LinkedIn auth
-router.get("/linkedin", passport.authenticate("linkedin", { prompt: "login" }));
+router.get("/linkedin", passport.authenticate("linkedin"));
 
 // 🌀 LinkedIn callback
 router.get(

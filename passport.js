@@ -20,11 +20,12 @@ passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: process.env.LINKEDIN_CALLBACK_URL,
-  scope: ['r_emailaddress', 'r_liteprofile'],
+  scope: ['r_liteprofile', 'r_emailaddress'],
 }, (accessToken, refreshToken, profile, done) => {
-  console.log('LinkedIn profile:', profile);
+  console.log('LinkedIn profile:', profile); // This will actually work now
   return done(null, profile);
 }));
+
 
 
 passport.serializeUser((user, done) => {

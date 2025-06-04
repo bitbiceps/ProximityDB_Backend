@@ -366,6 +366,7 @@ export const handleGoogleLogin = async (req, res) => {
         email: user.email,
       },
     });
+    
   } catch (error) {
     console.error("Google login error:", error);
     return res
