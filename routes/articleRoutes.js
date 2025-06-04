@@ -12,7 +12,8 @@ import {
   handleCreateArticlesSecond,
   handleGenerateArticle,
   handleArticleFileNameUpdate,
-  handleArticleDelete
+  handleArticleDelete,
+  handleArticlePublishRequest
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
 
@@ -30,6 +31,7 @@ articleRouter.post("/get", handleGetArticlesById);
 articleRouter.post("/article-outlet",determineBestOutletsForArticle)
 articleRouter.post("/generate-article",handleGenerateArticle);
 articleRouter.delete("/delete/:articleId", handleArticleDelete);
+articleRouter.post("/publish-request",handleArticlePublishRequest);
 
 
 

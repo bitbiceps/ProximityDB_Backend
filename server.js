@@ -42,7 +42,11 @@ app.use(cookieParser())
 app.use(passport.initialize());
 app.use(passport.session());
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({origin: process.env.NODE_ENV === "production" 
+      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press"] 
+      : true ,
+     credentials: true }));
+
 app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
 app.use("/pay", express.json(), paymentRoutes);
 app.use("/auth", express.json(), authRoutes);

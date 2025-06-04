@@ -424,21 +424,24 @@ export const handleLinkedInLogin = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      { email: user.email, id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const {accessToken  , refreshToken } = generateTokens(user);
 
-    return res.status(200).json({
-      message: "LinkedIn login successful",
-      token,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-      },
+    res.cookie('accessToken', accessToken , {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'strict',
+      });
+
+    res.cookie('refreshToken', refreshToken , {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 3 * 24 * 60 * 60 * 1000,
+        sameSite: 'strict',
     });
+
+    res.redirect(`${process.env.FRONTEND_URL}`);
+    
   } catch (error) {
     console.error("LinkedIn login error:", error);
     return res

@@ -9,10 +9,10 @@ const articleSchema = new mongoose.Schema(
       default: "",
     },
 
-    // Status to track the article submission state
     status: {
       type: String,
-      default: "pending", // default value set to 'pending'
+      // enum: ["unpublish", "publish", "under review"],
+      default: "unpublish",
     },
 
     // Reference to a single Topic document (ObjectId or null)
@@ -26,7 +26,7 @@ const articleSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    updatedContent:{type:String, default:""},
+    updatedContent: { type: String, default: "" },
 
     // // Reference to the User document
     topicId: {
@@ -34,8 +34,8 @@ const articleSchema = new mongoose.Schema(
       ref: "Topic", // Reference to the User model/collection
       required: false, // Ensures every article is associated with a user
     },
-    selectedTopic :{type : String , default : null},
-    fileName :{type : String , default : null},
+    selectedTopic: { type: String, default: null },
+    fileName: { type: String, default: null },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Reference to the Topic model/collection
@@ -48,20 +48,22 @@ const articleSchema = new mongoose.Schema(
       termsAndCondition: { type: Boolean, default: false },
       companyName: { type: Boolean, default: false },
       authorName: { type: Boolean, default: false },
-      outlets: [{
-        Outlets_Name: String,
-        Reporter_Byline: String,
-        Concerned_Agency: String,
-        Reach: String,
-        Backdating: String,
-        Genre_Beat: [String],
-        AI_Generated_Content: String,
-        Byline_Without_Author: String,
-        By_Desk: String,
-        Cost: String
-      }],
-      selectedOutlet :{type : String , default : null}
-          },
+      outlets: [
+        {
+          Outlets_Name: String,
+          Reporter_Byline: String,
+          Concerned_Agency: String,
+          Reach: String,
+          Backdating: String,
+          Genre_Beat: [String],
+          AI_Generated_Content: String,
+          Byline_Without_Author: String,
+          By_Desk: String,
+          Cost: String,
+        },
+      ],
+      selectedOutlet: { type: String, default: null },
+    },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields
 );
