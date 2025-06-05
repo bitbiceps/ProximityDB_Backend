@@ -1,8 +1,8 @@
 import openAi from "./openAi.js";
 export const articleStatus = {
-  pending: "pending",
-  inReview: "review",
-  completed: "completed",
+  pending: "unpublish",
+  inReview: "under review",
+  completed: "published",
 };
 
 export const profileFile = "https://api.proximity.press/uploads/profile/";

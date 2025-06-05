@@ -149,16 +149,17 @@ export const handleArticleMarkCompleted = async (req, res) => {
 
     // Handle case if article is not found
     const article = await articleModel
-      .findOne({ _id: articleId })
+      .findById(articleId)
       .populate("userId");
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
 
+
     // Fetch user and topic in parallel (using article.userId and articleId)
     const [user, topic] = await Promise.all([
       userModel.findById(article.userId),
-      topicModel.findOne({ articleId }),
+      topicModel.findById(article.topicId),
     ]);
 
     // Handle case if topic is not found
@@ -174,12 +175,12 @@ export const handleArticleMarkCompleted = async (req, res) => {
     // Save the updated article and topic in parallel
     await Promise.all([article.save(), topic.save()]);
 
-    // Create a task for the user (assuming createTask is a function that sends data to some service)
-    await createTask(
-      `${user.fullName} <Press> ${topic.finalTopic}`,
-      // `${user.email}\n${article.value}`
-      `${article.value} \n  **Selected Outlet :  ${article?.metaData?.selectedOutlet} **`
-    );
+    // // Create a task for the user (assuming createTask is a function that sends data to some service)
+    // await createTask(
+    //   `${user.fullName} <Press> ${topic.finalTopic}`,
+    //   // `${user.email}\n${article.value}`
+    //   `${article.value} \n  **Selected Outlet :  ${article?.metaData?.selectedOutlet} **`
+    // );
 
     const articleUrl = `${process.env.FRONTEND_URL_Sec}/generated_article?id=${articleId}`;
 
@@ -188,7 +189,7 @@ export const handleArticleMarkCompleted = async (req, res) => {
       message: "Article is verified successfully",
     });
 
-    await sendArticleVerifySuccesfullly(article.userId.email, articleUrl);
+    // await sendArticleVerifySuccesfullly(article.userId.email, articleUrl);
 
     return res.status(200).json({
       message: "Article marked completed",
