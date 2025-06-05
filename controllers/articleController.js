@@ -2,7 +2,7 @@ import articleModel from "../models/articleModels.js";
 import openAi from "../helpers/openAi.js";
 import topicModel from "../models/topicModel.js";
 import userModel from "../models/userModel.js";
-import { determineBestOutlets } from "../helpers/utils.js";
+import { articleStatus, determineBestOutlets } from "../helpers/utils.js";
 import io from "../server.js";
 import { sendNotification } from "../server.js";
 import MessageModel from "../models/messageModal.js";
@@ -61,7 +61,9 @@ export const handleGetApprovedTopics = async (req, res) => {
 export const handleCreateArticles = async (req, res) => {
   const { _id: topicId, userId } = req.body;
 
-  const saveArticles = await articleModel.findOne({ topicId }).populate("profileImage topicId");
+  const saveArticles = await articleModel
+    .findOne({ topicId })
+    .populate("profileImage topicId");
 
   try {
     const user = await userModel
@@ -160,7 +162,9 @@ export const handleCreateArticles = async (req, res) => {
       // Save the new article in the database
       await articleModel.create(newArticle);
 
-      const newObj = await articleModel.findOne({ topicId }).populate("profileImage topicId");
+      const newObj = await articleModel
+        .findOne({ topicId })
+        .populate("profileImage topicId");
       article.articleId = newObj._id;
       await article.save();
 
@@ -180,14 +184,16 @@ export const handleArticleUpdateRequested = async (req, res) => {
 
   // Validate the input data
   if (!articleId || !content) {
-    return res.status(400).json({ message: "articleId and content are required" });
+    return res
+      .status(400)
+      .json({ message: "articleId and content are required" });
   }
 
   try {
     // Attempt to update the article directly
     const article = await articleModel.findByIdAndUpdate(
-      articleId, 
-      { updateRequested: true, updatedContent: content }, 
+      articleId,
+      { updateRequested: true, updatedContent: content },
       { new: true } // Returns the updated document
     );
 
@@ -209,20 +215,22 @@ export const handleArticleUpdateRequested = async (req, res) => {
   }
 };
 
-// content update 
+// content update
 
-export const handleArticleContentUpdate = async (req , res) => {
-  const { articleId, content } = req.body; 
+export const handleArticleContentUpdate = async (req, res) => {
+  const { articleId, content } = req.body;
 
   if (!articleId || !content) {
-    return res.status(400).json({ message: "articleId and content are required" });
+    return res
+      .status(400)
+      .json({ message: "articleId and content are required" });
   }
 
   try {
     const article = await articleModel.findByIdAndUpdate(
-      articleId, 
-      { updateRequested: false, updatedContent: "" , value : content }, 
-      { new: true } 
+      articleId,
+      { updateRequested: false, updatedContent: "", value: content },
+      { new: true }
     );
 
     if (!article) {
@@ -230,14 +238,16 @@ export const handleArticleContentUpdate = async (req , res) => {
     }
 
     const newMessage = await MessageModel.create({
-      userId : article?.userId,
+      userId: article?.userId,
       messageType: "article_update",
       articleId,
-      content : "Article is updated successfully"
+      content: "Article is updated successfully",
     });
 
-    
-    sendNotification({userId : article?.userId ,message : "Article Updated succesfully"})
+    sendNotification({
+      userId: article?.userId,
+      message: "Article Updated succesfully",
+    });
 
     return res.status(200).json({
       message: "Article content updated successfully",
@@ -250,31 +260,32 @@ export const handleArticleContentUpdate = async (req , res) => {
       error: error.message,
     });
   }
-}
+};
 
-
-
-
-export const handleArticleFileNameUpdate = async (req , res) => {
-  const { articleId, fileName } = req.body; 
+export const handleArticleFileNameUpdate = async (req, res) => {
+  const { articleId, fileName } = req.body;
 
   if (!articleId || !fileName) {
-    return res.status(400).json({ message: "articleId and FileName are required" });
+    return res
+      .status(400)
+      .json({ message: "articleId and FileName are required" });
   }
 
   try {
     const article = await articleModel.findByIdAndUpdate(
-      articleId, 
-      {fileName : fileName},
-      { new: true } 
+      articleId,
+      { fileName: fileName },
+      { new: true }
     );
 
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    sendNotification({userId : article?.userId ,message : "Article FileName Updated succesfully"})
-
+    sendNotification({
+      userId: article?.userId,
+      message: "Article FileName Updated succesfully",
+    });
 
     return res.status(200).json({
       message: "Article filename updated successfully",
@@ -287,9 +298,7 @@ export const handleArticleFileNameUpdate = async (req , res) => {
       error: error.message,
     });
   }
-}
-
-
+};
 
 // submit
 
@@ -345,7 +354,6 @@ export const handleSubmitArticle = async (req, res) => {
   }
 };
 
-
 export const handleArticleMarkCompleted = async (req, res) => {
   try {
     const { articleId } = req.body; // Get articleId from the request parameters
@@ -386,7 +394,9 @@ export const handleGetArticles = async (req, res) => {
     }
 
     // Find all articles associated with the userId
-   const articles = await articleModel.find({ userId }).sort({ updatedAt: -1 });
+    const articles = await articleModel
+      .find({ userId })
+      .sort({ updatedAt: -1 });
 
     if (!articles.length) {
       return res
@@ -434,20 +444,16 @@ export const handleGetArticlesById = async (req, res) => {
   }
 };
 
-
-
-
 export const handleArticleDelete = async (req, res) => {
   try {
-      const { articleId } = req.params
+    const { articleId } = req.params;
 
     if (!articleId) {
       return res.status(400).json({ message: "articleId is required" });
     }
 
     // Find all articles associated with the userId
-    const article = await articleModel
-      .findById(articleId)
+    const article = await articleModel.findById(articleId);
 
     if (!article) {
       return res
@@ -457,7 +463,7 @@ export const handleArticleDelete = async (req, res) => {
 
     await articleModel.deleteOne({ _id: articleId });
 
-    return res.status(200).json({ message: "article deleted successfully"});
+    return res.status(200).json({ message: "article deleted successfully" });
   } catch (error) {
     console.error(error.message);
     return res
@@ -502,108 +508,103 @@ export const determineBestOutletsForArticle = async (req, res) => {
   }
 };
 
-
-
 export const handleGenerateArticle = async (req, res) => {
-  const { userId , topic } = req.body;
+  const { userId, topic } = req.body;
 
   try {
-    const user = await userModel
-      .findById(userId)
-      .select({
-        "questionnaire.basicInformation": 1,
-        "questionnaire.expertiseAndSkills": 1,
-        "questionnaire.challengesAndGaps": 1,
-        "questionnaire.impactAndAchievements": 1,
-        "questionnaire.industryContextAndInsights": 1,
-        "fullName": 1,
-      })
+    const user = await userModel.findById(userId).select({
+      "questionnaire.basicInformation": 1,
+      "questionnaire.expertiseAndSkills": 1,
+      "questionnaire.challengesAndGaps": 1,
+      "questionnaire.impactAndAchievements": 1,
+      "questionnaire.industryContextAndInsights": 1,
+      fullName: 1,
+    });
 
+    // Retrieve the questionnaire answers from the user
+    const questions = [
+      {
+        question: user.questionnaire.basicInformation[1].question,
+        answer: user.questionnaire.basicInformation[1].answer,
+      },
+      {
+        question: user.questionnaire.basicInformation[2].question,
+        answer: user.questionnaire.basicInformation[2].answer,
+      },
+      {
+        question: user.questionnaire.basicInformation[3].question,
+        answer: user.questionnaire.basicInformation[3].answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[1]?.question,
+        answer: user.questionnaire.expertiseAndSkills[1]?.answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[2]?.question,
+        answer: user.questionnaire.expertiseAndSkills[2]?.answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[3]?.question,
+        answer: user.questionnaire.expertiseAndSkills[3]?.answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[4]?.question,
+        answer: user.questionnaire.expertiseAndSkills[4]?.answer,
+      },
+      {
+        question: user.questionnaire.challengesAndGaps[1]?.question,
+        answer: user.questionnaire.challengesAndGaps[1]?.answer,
+      },
+      {
+        question: user.questionnaire.challengesAndGaps[2]?.question,
+        answer: user.questionnaire.challengesAndGaps[2]?.answer,
+      },
+      {
+        question: user.questionnaire.challengesAndGaps[3]?.question,
+        answer: user.questionnaire.challengesAndGaps[3]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[1]?.question,
+        answer: user.questionnaire.impactAndAchievements[1]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[2]?.question,
+        answer: user.questionnaire.impactAndAchievements[2]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[3]?.question,
+        answer: user.questionnaire.impactAndAchievements[3]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[4]?.question,
+        answer: user.questionnaire.impactAndAchievements[4]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[5]?.question,
+        answer: user.questionnaire.impactAndAchievements[5]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[6]?.question,
+        answer: user.questionnaire.impactAndAchievements[6]?.answer,
+      },
+      {
+        question: user.questionnaire.industryContextAndInsights[1]?.question,
+        answer: user.questionnaire.industryContextAndInsights[1]?.answer,
+      },
+      {
+        question: user.questionnaire.industryContextAndInsights[2]?.question,
+        answer: user.questionnaire.industryContextAndInsights[2]?.answer,
+      },
+      {
+        question: user.questionnaire.industryContextAndInsights[3]?.question,
+        answer: user.questionnaire.industryContextAndInsights[3]?.answer,
+      },
+    ].filter((entry) => entry.answer && entry.answer.length > 4);
 
-      // Retrieve the questionnaire answers from the user
-      const questions = [
-        {
-          question: user.questionnaire.basicInformation[1].question,
-          answer: user.questionnaire.basicInformation[1].answer,
-        },
-        {
-          question: user.questionnaire.basicInformation[2].question,
-          answer: user.questionnaire.basicInformation[2].answer,
-        },
-        {
-          question: user.questionnaire.basicInformation[3].question,
-          answer: user.questionnaire.basicInformation[3].answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[1]?.question,
-          answer: user.questionnaire.expertiseAndSkills[1]?.answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[2]?.question,
-          answer: user.questionnaire.expertiseAndSkills[2]?.answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[3]?.question,
-          answer: user.questionnaire.expertiseAndSkills[3]?.answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[4]?.question,
-          answer: user.questionnaire.expertiseAndSkills[4]?.answer,
-        },
-        {
-          question: user.questionnaire.challengesAndGaps[1]?.question,
-          answer: user.questionnaire.challengesAndGaps[1]?.answer,
-        },
-        {
-          question: user.questionnaire.challengesAndGaps[2]?.question,
-          answer: user.questionnaire.challengesAndGaps[2]?.answer,
-        },
-        {
-          question: user.questionnaire.challengesAndGaps[3]?.question,
-          answer: user.questionnaire.challengesAndGaps[3]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[1]?.question,
-          answer: user.questionnaire.impactAndAchievements[1]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[2]?.question,
-          answer: user.questionnaire.impactAndAchievements[2]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[3]?.question,
-          answer: user.questionnaire.impactAndAchievements[3]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[4]?.question,
-          answer: user.questionnaire.impactAndAchievements[4]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[5]?.question,
-          answer: user.questionnaire.impactAndAchievements[5]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[6]?.question,
-          answer: user.questionnaire.impactAndAchievements[6]?.answer,
-        },
-        {
-          question: user.questionnaire.industryContextAndInsights[1]?.question,
-          answer: user.questionnaire.industryContextAndInsights[1]?.answer,
-        },
-        {
-          question: user.questionnaire.industryContextAndInsights[2]?.question,
-          answer: user.questionnaire.industryContextAndInsights[2]?.answer,
-        },
-        {
-          question: user.questionnaire.industryContextAndInsights[3]?.question,
-          answer: user.questionnaire.industryContextAndInsights[3]?.answer,
-        },
-      ].filter((entry) => entry.answer && entry.answer.length > 4);
+    const userPlaceholder = user.fullName || "user";
 
-      const userPlaceholder = user.fullName || 'user';
-
-      // Single API call to generate the article
-      const promptContent = `
+    // Single API call to generate the article
+    const promptContent = `
         **Objective:**  
         Write a professional, engaging, and insightful article about the topic: **${topic}**.  
         The article must strictly include the user's answers and refer to them naturally throughout the content.  
@@ -621,47 +622,54 @@ export const handleGenerateArticle = async (req, res) => {
         **User Information:**  
         - Name: ${userPlaceholder}  
         - Role: ${user.questionnaire.basicInformation[2].answer}  
-        - Company/Organization: ${user.questionnaire.basicInformation[3].answer}  
+        - Company/Organization: ${
+          user.questionnaire.basicInformation[3].answer
+        }  
 
         **User Responses:**  
         ${questions
-          .map((item, index) => `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${item.answer}`)
+          .map(
+            (item, index) =>
+              `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${
+                item.answer
+              }`
+          )
           .join("\n\n")}
       `;
 
-      const response = await openAi.writer.chat.completions.create({
-        model: openAi.model,
-        messages: [
-          {
-            role: "system",
-            content: promptContent,
-          },
-          {
-            role: "user",
-            content : promptContent
-          },
-        ],
-        max_tokens: 1200,
-        temperature: 0.7,
-      });
+    const response = await openAi.writer.chat.completions.create({
+      model: openAi.model,
+      messages: [
+        {
+          role: "system",
+          content: promptContent,
+        },
+        {
+          role: "user",
+          content: promptContent,
+        },
+      ],
+      max_tokens: 1200,
+      temperature: 0.7,
+    });
 
-      const finalArticle = response.choices[0].message.content.trim();
+    const finalArticle = response.choices[0].message.content.trim();
 
-      const newArticle = {
-        value: finalArticle ,
-        userId,
-        selectedTopic : topic,
-        fileName : topic
-      };
+    const newArticle = {
+      value: finalArticle,
+      userId,
+      selectedTopic: topic,
+      fileName: topic,
+    };
 
-     const createdArticle =  await articleModel.create(newArticle);
+    const createdArticle = await articleModel.create(newArticle);
 
-     const responseJson = {
-      ...newArticle ,
-      _id : createdArticle?._id
-     }
+    const responseJson = {
+      ...newArticle,
+      _id: createdArticle?._id,
+    };
 
-      return res.status(200).json(responseJson);
+    return res.status(200).json(responseJson);
   } catch (error) {
     console.error("Error generating articles:", error);
     return res.status(500).json({
@@ -671,13 +679,43 @@ export const handleGenerateArticle = async (req, res) => {
   }
 };
 
-
 export const handleCreateArticlesSecond = async (req, res) => {
-  const { _id: topicId , userId } = req.body;
-
-  const saveArticles = await articleModel.findOne({ topicId }).populate("profileImage topicId");
+  const { topicId, userId } = req.body;
 
   try {
+    // Step 1: Find topic document where nested topics array contains the topicId
+    const topicDoc = await topicModel.findOne({ "topics._id": topicId });
+
+    if (!topicDoc) {
+      return res.status(404).json({ message: "Topic document not found" });
+    }
+
+    // Step 2: Find the actual topic object inside the array
+    const matchedTopic = topicDoc.topics.find(
+      (topic) => topic._id.toString() === topicId
+    );
+
+    if (!matchedTopic) {
+      return res
+        .status(400)
+        .json({ message: "No matching topic found in array" });
+    }
+
+    // Step 3: Set finalTopic = matchedTopic.value
+    topicDoc.finalTopic = matchedTopic.value;
+    topicDoc.status = articleStatus.completed;
+    await topicDoc.save();
+
+    // Step 4: Check if article already exists
+    const existingArticle = await articleModel
+      .findOne({ topicId: topicDoc._id.toString() })
+      .populate("profileImage topicId");
+
+    if (existingArticle && existingArticle?.value !== "") {
+      return res.status(200).json(existingArticle);
+    }
+
+    // Step 5: Get user details
     const user = await userModel
       .findById(userId)
       .select({
@@ -686,156 +724,161 @@ export const handleCreateArticlesSecond = async (req, res) => {
         "questionnaire.challengesAndGaps": 1,
         "questionnaire.impactAndAchievements": 1,
         "questionnaire.industryContextAndInsights": 1,
-        "fullName": 1,
+        fullName: 1,
       })
       .populate("topics");
 
-    if (saveArticles && saveArticles?.value != "") {
-      return res.status(200).json(saveArticles);
-    } else {
-      const article = await topicModel.findOne({ _id: topicId });
+    // Step 6: Map questions from user profile
+    const questions = [
+      {
+        question: user.questionnaire.basicInformation[1].question,
+        answer: user.questionnaire.basicInformation[1].answer,
+      },
+      {
+        question: user.questionnaire.basicInformation[2].question,
+        answer: user.questionnaire.basicInformation[2].answer,
+      },
+      {
+        question: user.questionnaire.basicInformation[3].question,
+        answer: user.questionnaire.basicInformation[3].answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[1]?.question,
+        answer: user.questionnaire.expertiseAndSkills[1]?.answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[2]?.question,
+        answer: user.questionnaire.expertiseAndSkills[2]?.answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[3]?.question,
+        answer: user.questionnaire.expertiseAndSkills[3]?.answer,
+      },
+      {
+        question: user.questionnaire.expertiseAndSkills[4]?.question,
+        answer: user.questionnaire.expertiseAndSkills[4]?.answer,
+      },
+      {
+        question: user.questionnaire.challengesAndGaps[1]?.question,
+        answer: user.questionnaire.challengesAndGaps[1]?.answer,
+      },
+      {
+        question: user.questionnaire.challengesAndGaps[2]?.question,
+        answer: user.questionnaire.challengesAndGaps[2]?.answer,
+      },
+      {
+        question: user.questionnaire.challengesAndGaps[3]?.question,
+        answer: user.questionnaire.challengesAndGaps[3]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[1]?.question,
+        answer: user.questionnaire.impactAndAchievements[1]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[2]?.question,
+        answer: user.questionnaire.impactAndAchievements[2]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[3]?.question,
+        answer: user.questionnaire.impactAndAchievements[3]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[4]?.question,
+        answer: user.questionnaire.impactAndAchievements[4]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[5]?.question,
+        answer: user.questionnaire.impactAndAchievements[5]?.answer,
+      },
+      {
+        question: user.questionnaire.impactAndAchievements[6]?.question,
+        answer: user.questionnaire.impactAndAchievements[6]?.answer,
+      },
+      {
+        question: user.questionnaire.industryContextAndInsights[1]?.question,
+        answer: user.questionnaire.industryContextAndInsights[1]?.answer,
+      },
+      {
+        question: user.questionnaire.industryContextAndInsights[2]?.question,
+        answer: user.questionnaire.industryContextAndInsights[2]?.answer,
+      },
+      {
+        question: user.questionnaire.industryContextAndInsights[3]?.question,
+        answer: user.questionnaire.industryContextAndInsights[3]?.answer,
+      },
+    ].filter((entry) => entry.answer && entry.answer.length > 4);
 
-      // Retrieve the questionnaire answers from the user
-      const questions = [
-        {
-          question: user.questionnaire.basicInformation[1].question,
-          answer: user.questionnaire.basicInformation[1].answer,
-        },
-        {
-          question: user.questionnaire.basicInformation[2].question,
-          answer: user.questionnaire.basicInformation[2].answer,
-        },
-        {
-          question: user.questionnaire.basicInformation[3].question,
-          answer: user.questionnaire.basicInformation[3].answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[1]?.question,
-          answer: user.questionnaire.expertiseAndSkills[1]?.answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[2]?.question,
-          answer: user.questionnaire.expertiseAndSkills[2]?.answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[3]?.question,
-          answer: user.questionnaire.expertiseAndSkills[3]?.answer,
-        },
-        {
-          question: user.questionnaire.expertiseAndSkills[4]?.question,
-          answer: user.questionnaire.expertiseAndSkills[4]?.answer,
-        },
-        {
-          question: user.questionnaire.challengesAndGaps[1]?.question,
-          answer: user.questionnaire.challengesAndGaps[1]?.answer,
-        },
-        {
-          question: user.questionnaire.challengesAndGaps[2]?.question,
-          answer: user.questionnaire.challengesAndGaps[2]?.answer,
-        },
-        {
-          question: user.questionnaire.challengesAndGaps[3]?.question,
-          answer: user.questionnaire.challengesAndGaps[3]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[1]?.question,
-          answer: user.questionnaire.impactAndAchievements[1]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[2]?.question,
-          answer: user.questionnaire.impactAndAchievements[2]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[3]?.question,
-          answer: user.questionnaire.impactAndAchievements[3]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[4]?.question,
-          answer: user.questionnaire.impactAndAchievements[4]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[5]?.question,
-          answer: user.questionnaire.impactAndAchievements[5]?.answer,
-        },
-        {
-          question: user.questionnaire.impactAndAchievements[6]?.question,
-          answer: user.questionnaire.impactAndAchievements[6]?.answer,
-        },
-        {
-          question: user.questionnaire.industryContextAndInsights[1]?.question,
-          answer: user.questionnaire.industryContextAndInsights[1]?.answer,
-        },
-        {
-          question: user.questionnaire.industryContextAndInsights[2]?.question,
-          answer: user.questionnaire.industryContextAndInsights[2]?.answer,
-        },
-        {
-          question: user.questionnaire.industryContextAndInsights[3]?.question,
-          answer: user.questionnaire.industryContextAndInsights[3]?.answer,
-        },
-      ].filter((entry) => entry.answer && entry.answer.length > 4);
+    const userPlaceholder = user.fullName || "user";
 
-      const userPlaceholder = user.fullName || 'user';
+    // Step 7: Generate prompt content
+    const promptContent = `
+**Objective:**  
+Write a professional, engaging, and insightful article about the topic: **${
+      topicDoc.finalTopic
+    }**.  
+The article must strictly include the user's answers and refer to them naturally throughout the content.  
+Maintain a balance of **60% topic focus and 40% user focus**.  
+Write in the **third person**, referring to the user by their name (${userPlaceholder}). Do not use "I" or "me."
 
-      // Single API call to generate the article
-      const promptContent = `
-        **Objective:**  
-        Write a professional, engaging, and insightful article about the topic: **${article.finalTopic}**.  
-        The article must strictly include the user's answers and refer to them naturally throughout the content.  
-        Maintain a balance of **60% topic focus and 40% user focus**.  
-        Write in the **third person**, referring to the user by their name (${userPlaceholder}). Do not use "I" or "me."
+**Instructions:**  
+1. Start with a compelling introduction to the topic and its significance in the industry.  
+2. Introduce ${userPlaceholder} naturally, mentioning their role and background.  
+3. Use the user's answers to highlight their expertise, challenges, and contributions.  
+4. Refer to ${userPlaceholder} by name throughout the article. Do not use "I" or "me."  
+5. Provide knowledgeable insights about the topic while integrating the user's answers.  
+6. Conclude with actionable takeaways for professionals in the field.  
 
-          **Instructions:**  
-        1. Start with a compelling introduction to the topic and its significance in the industry.  
-        2. Introduce ${userPlaceholder} naturally, mentioning their role and background.  
-        3. Use the user's answers to highlight their expertise, challenges, and contributions.  
-        4. Refer to ${userPlaceholder} by name throughout the article. Do not use "I" or "me."  
-        5. Provide knowledgeable insights about the topic while integrating the user's answers.  
-        6. Conclude with actionable takeaways for professionals in the field.  
+**User Information:**  
+- Name: ${userPlaceholder}  
+- Role: ${user.questionnaire.basicInformation[2].answer}  
+- Company/Organization: ${user.questionnaire.basicInformation[3].answer}  
 
-        **User Information:**  
-        - Name: ${userPlaceholder}  
-        - Role: ${user.questionnaire.basicInformation[2].answer}  
-        - Company/Organization: ${user.questionnaire.basicInformation[3].answer}  
+**User Responses:**  
+${questions
+  .map(
+    (item, index) =>
+      `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${
+        item.answer
+      }`
+  )
+  .join("\n\n")}
+`;
 
-        **User Responses:**  
-        ${questions
-          .map((item, index) => `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${item.answer}`)
-          .join("\n\n")}
-      `;
+    // Step 8: Call OpenAI to generate article
+    const response = await openAi.writer.chat.completions.create({
+      model: openAi.model,
+      messages: [
+        {
+          role: "system",
+          content: promptContent,
+        },
+        {
+          role: "user",
+          content: promptContent,
+        },
+      ],
+      max_tokens: 1200,
+      temperature: 0.7,
+    });
 
-      const response = await openAi.writer.chat.completions.create({
-        model: openAi.model,
-        messages: [
-          {
-            role: "system",
-            content: promptContent,
-          },
-          {
-            role: "user",
-            content : promptContent
-          },
-        ],
-        max_tokens: 1200,
-        temperature: 0.7,
-      });
+    const finalArticle = response.choices[0].message.content.trim();
 
-      const finalArticle = response.choices[0].message.content.trim();
+    // Step 9: Save article
+    const newArticle = await articleModel.create({
+      value: finalArticle,
+      topicId: topicDoc._id,
+      userId,
+    });
 
-      const newArticle = {
-        value: finalArticle,
-        topicId: topicId,
-        userId,
-      };
+    // Step 10: Link articleId back to topicDoc
+    topicDoc.articleId = newArticle._id;
+    await topicDoc.save();
 
-      await articleModel.create(newArticle);
+    const populatedArticle = await articleModel
+      .findById(newArticle._id)
+      .populate("profileImage topicId");
 
-      const newObj = await articleModel.findOne({ topicId }).populate("profileImage topicId");
-      article.articleId = newObj._id;
-      await article.save();
-      
-      return res.status(200).json(newObj);
-    }
+    return res.status(200).json(populatedArticle);
   } catch (error) {
     console.error("Error generating articles:", error);
     return res.status(500).json({
@@ -845,10 +888,8 @@ export const handleCreateArticlesSecond = async (req, res) => {
   }
 };
 
-
-
-export const handleArticlePublishRequest = async (req , res) => {
-  const { articleId} = req.body; 
+export const handleArticlePublishRequest = async (req, res) => {
+  const { articleId } = req.body;
 
   if (!articleId) {
     return res.status(400).json({ message: "articleId are required" });
@@ -856,16 +897,19 @@ export const handleArticlePublishRequest = async (req , res) => {
 
   try {
     const article = await articleModel.findByIdAndUpdate(
-      articleId, 
-      { status : 'under review'}, 
-      { new: true } 
+      articleId,
+      { status: "under review" },
+      { new: true }
     );
 
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
-    
-    sendNotification({userId : article?.userId ,message : "Article submitted succesfully"})
+
+    sendNotification({
+      userId: article?.userId,
+      message: "Article submitted succesfully",
+    });
 
     return res.status(200).json({
       message: "Article submitted successfully",
@@ -878,7 +922,4 @@ export const handleArticlePublishRequest = async (req , res) => {
       error: error.message,
     });
   }
-}
-
-
-
+};
