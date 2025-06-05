@@ -253,6 +253,8 @@ export const handleArticleContentUpdate = async (req , res) => {
 }
 
 
+
+
 export const handleArticleFileNameUpdate = async (req , res) => {
   const { articleId, fileName } = req.body; 
 
@@ -384,7 +386,7 @@ export const handleGetArticles = async (req, res) => {
     }
 
     // Find all articles associated with the userId
-    const articles = await articleModel.find({ userId });
+   const articles = await articleModel.find({ userId }).sort({ updatedAt: -1 });
 
     if (!articles.length) {
       return res
@@ -842,5 +844,41 @@ export const handleCreateArticlesSecond = async (req, res) => {
     });
   }
 };
+
+
+
+export const handleArticlePublishRequest = async (req , res) => {
+  const { articleId} = req.body; 
+
+  if (!articleId) {
+    return res.status(400).json({ message: "articleId are required" });
+  }
+
+  try {
+    const article = await articleModel.findByIdAndUpdate(
+      articleId, 
+      { status : 'under review'}, 
+      { new: true } 
+    );
+
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    
+    sendNotification({userId : article?.userId ,message : "Article submitted succesfully"})
+
+    return res.status(200).json({
+      message: "Article submitted successfully",
+      article,
+    });
+  } catch (error) {
+    console.error("Error updating article:", error);
+    return res.status(500).json({
+      message: "Error updating article content",
+      error: error.message,
+    });
+  }
+}
+
 
 

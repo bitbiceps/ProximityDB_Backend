@@ -10,12 +10,14 @@ import {
   changePassword,
   handleGoogleLogin,
   handleLinkedInLogin,
+  handleLogout
 } from "../controllers/authController.js";
 import {
   validateRegistration,
   validateLogin,
 } from "../middleware/validateMiddleware.js";
 import passport from "../passport.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -23,10 +25,11 @@ router.post("/register", validateRegistration, registerUser);
 router.post("/login", validateLogin, loginUser);
 router.get("/verify/:token", verifyEmail);
 router.get("/updated/:userId", getUserArticles);
-router.post("/check-auth", checkAuth);
+router.post("/check-auth",verifyToken , checkAuth);
 router.post("/reset-password", handleResetPassword);
 router.post("/verify-otp", handleVerifyOtp);
 router.post("/change-password", changePassword);
+router.get('/logout',handleLogout)
 
 // Google OAuth start
 router.get(
@@ -40,10 +43,7 @@ router.get(
 // Google OAuth callback
 router.get(
   "/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "/login",
-    session: false,
-  }),
+  passport.authenticate("google", { failureRedirect: "/login"}),
   handleGoogleLogin
 );
 
