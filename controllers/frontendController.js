@@ -1,5 +1,6 @@
 import createClickUpTask from "../helpers/clickUpFrontend.js";
 import BookACallModel from "../models/BookACallModel.js";
+import Subscriber from "../models/subscribersModel.js";
 export const BookACall = async (req, res) => {
   try {
     const { fullName, email, phoneNumber, message } = req.body;
@@ -33,3 +34,25 @@ export const BookACall = async (req, res) => {
       .json({ message: "Failed to create task", error: error.message });
   }
 };
+
+
+export const Subscribe = async (req , res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+    const existing = await Subscriber.findOne({ email });
+    if (existing) {
+      return res.status(409).json({ message: 'Email already subscribed.' });
+    }
+
+    const subscriber = new Subscriber({ email });
+    await subscriber.save();
+
+    res.status(201).json({ message: 'Subscribed successfully!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Something went wrong.', error: err.message });
+  }
+}
+
+
