@@ -130,11 +130,11 @@ export const loginUser = async (req, res) => {
       .findOne({ email })
       .populate("topics profileImage");
     if (!user) {
-      return res.status(400).json({ message: "userModel does not exists" });
+      return res.status(400).json({ message: "user does not exists" });
     }
 
     if (!user.isVerified) {
-      return res.status(400).json({ message: "userModel is not verified" });
+      return res.status(400).json({ message: "user is not verified" });
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
