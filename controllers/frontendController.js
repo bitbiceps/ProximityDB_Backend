@@ -1,0 +1,35 @@
+import createClickUpTask from "../helpers/clickUpFrontend.js";
+import BookACallModel from "../models/BookACallModel.js";
+export const BookACall = async (req, res) => {
+  try {
+    const { fullName, email, phoneNumber, message } = req.body;
+
+    if (!fullName || !email || !phoneNumber || !message) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+    const bookACall = await BookACallModel.create({
+      fullName,
+      email,
+      phoneNumber,
+      message,
+    });
+    bookACall.save();
+
+    const description = `
+      Full Name: ${fullName}\n  
+      Email: ${email}\n  
+      Phone Number: ${phoneNumber}\n
+      Message: ${message}\n
+`;
+
+    const task = await createClickUpTask({
+        description ,
+        formData : {...req.body}
+    });
+    res.status(200).json(task);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to create task", error: error.message });
+  }
+};

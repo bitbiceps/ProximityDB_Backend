@@ -680,7 +680,7 @@ export const handleGenerateArticle = async (req, res) => {
 };
 
 export const handleCreateArticlesSecond = async (req, res) => {
-  const { topicId, userId } = req.body;
+  const { topicId , userId } = req.body;
 
   try {
     // Step 1: Find topic document where nested topics array contains the topicId
@@ -868,6 +868,8 @@ ${questions
       value: finalArticle,
       topicId: topicDoc._id,
       userId,
+      selectedTopic: matchedTopic.value,
+      fileName: matchedTopic.value,
     });
 
     // Step 10: Link articleId back to topicDoc

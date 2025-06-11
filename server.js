@@ -16,6 +16,7 @@ import session from "express-session";
 import passport from "./passport.js";
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import frontendRouter from "./routes/frontendRoutes.js"
 
 dotenv.config({ path: '.env.local' });
 
@@ -43,7 +44,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 // Middleware
 app.use(cors({origin: process.env.NODE_ENV === "production" 
-      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press"] 
+      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press" , "https://staging.proximity.press"] 
       : true ,
      credentials: true }));
 
@@ -57,6 +58,7 @@ app.use("/api", express.json(), registrationRoute);
 app.use("/uploads", express.static("uploads"));
 app.use("/upload", imageRouter);
 app.use("/user", express.json(), userRouter);
+app.use("/frontend",express.json() , frontendRouter);
 
 // Socket.IO setup
 const server = http.createServer(app); // Create an HTTP server from the Express app
