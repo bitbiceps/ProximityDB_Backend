@@ -15,6 +15,10 @@ const BookACallSchema = new mongoose.Schema(
     phoneNumber: {
       type: String,
     },
+    service: {
+      type: String,
+      required: [true, 'Service is required'],
+    },
     message: {
       type: String,
       required: [true, 'Message is required'],

@@ -32,13 +32,14 @@ const createClickUpTask = async (createTaskDto) => {
       return acc;
     }, {});
 
-    const { fullName, email, message, phoneNumber } = createTaskDto.formData;
+    const { fullName, email, message, phoneNumber , service } = createTaskDto.formData;
 
     const fieldData = {
       'Full Name': fullName,
       'Email Address': email,
       'Contact Number': phoneNumber || '',
       'Message': message || '',
+      'Service' : service || ''
     };
 
     const custom_fields = Object.entries(fieldData).reduce((arr, [key, value]) => {

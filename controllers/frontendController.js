@@ -3,9 +3,9 @@ import BookACallModel from "../models/BookACallModel.js";
 import Subscriber from "../models/subscribersModel.js";
 export const BookACall = async (req, res) => {
   try {
-    const { fullName, email, phoneNumber, message } = req.body;
+    const { fullName, email, phoneNumber, message , service } = req.body;
 
-    if (!fullName || !email || !phoneNumber || !message) {
+    if (!fullName || !email || !phoneNumber || !message || !service) {
       return res.status(400).json({ message: "All fields are required" });
     }
     const bookACall = await BookACallModel.create({
@@ -13,14 +13,17 @@ export const BookACall = async (req, res) => {
       email,
       phoneNumber,
       message,
+      service
     });
     bookACall.save();
 
     const description = `
+      BOOK A CALL REQUEST\n
       Full Name: ${fullName}\n  
       Email: ${email}\n  
       Phone Number: ${phoneNumber}\n
       Message: ${message}\n
+      Service : ${service}\n
 `;
 
     const task = await createClickUpTask({
