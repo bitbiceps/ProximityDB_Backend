@@ -473,7 +473,7 @@ export const handleSelectOutlet = async (req, res) => {
 // Create a new ticket
 export const createTicket = async (req, res) => {
   try {
-    const { userId, subject, subTopic , description } = req.body;
+    const { userId, subject, subTopic = '' , description } = req.body;
 
     if (!userId || !subject ) {
       return res
