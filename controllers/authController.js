@@ -23,9 +23,13 @@ export const registerUser = async (req, res) => {
     });
 
     const existingEmail = await userModel.findOne({ email });
-    if (!existingEmail.isVerified) {
-      sendVerificationEmail(existingEmail.email, token);
+    if (existingEmail && !existingEmail.isVerified) {
+      await sendVerificationEmail(existingEmail.email, token);
       return res.status(200).json({ message: "Verification email sent" });
+    }else if(existingEmail && existingEmail.isVerified){
+      return res
+        .status(400)
+        .json({ message: "Email is already registered" });
     }
 
     // const existingPhoneNumber = await userModel.findOne({ phoneNumber });
@@ -37,7 +41,7 @@ export const registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    sendVerificationEmail(email, token);
+    await sendVerificationEmail(email, token);
 
     const newUser = await userModel.create({
       fullName,
@@ -53,7 +57,7 @@ export const registerUser = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Error registering userModel", error: error.message });
+      .json({ message: "Error registering user", error: error.message });
   }
 };
 
@@ -224,10 +228,10 @@ export const checkAuth = async (req, res) => {
 export const handleResetPassword = async (req, res) => {
   try {
     const { email } = req.body; // Email is provided in the request body
-    const userModel = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email });
 
-    if (!userModel) {
-      return res.status(404).json({ error: "userModel does not exist." });
+    if (!user) {
+      return res.status(404).json({ error: "user does not exist." });
     }
 
     // Generate a simple OTP
@@ -274,10 +278,10 @@ export const handleVerifyOtp = async (req, res) => {
     }
 
     // OTP is valid, find the userModel (employee)
-    const userModel = await userModel.findOne({ email }).exec();
+    const user = await userModel.findOne({ email }).exec();
 
-    if (!userModel) {
-      return res.status(404).json({ error: "userModel not found." });
+    if (!user) {
+      return res.status(404).json({ error: "user not found." });
     }
 
     // OTP is valid and userModel is found, you can proceed with password reset logic here
@@ -310,21 +314,21 @@ export const changePassword = async (req, res) => {
     }
 
     // Find the userModel by email
-    const userModel = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email });
 
     // If userModel is not found
-    if (!userModel) {
-      return res.status(404).json({ message: "userModel not found." });
+    if (!user) {
+      return res.status(404).json({ message: "user not found." });
     }
 
     // Hash the new password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Update the userModel's password
-    userModel.password = hashedPassword;
+    user.password = hashedPassword;
 
     // Save the updated userModel
-    await userModel.save();
+    await user.save();
 
     // Return success response
     return res.status(200).json({ message: "Password updated successfully." });

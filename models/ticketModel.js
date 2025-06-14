@@ -5,7 +5,8 @@ import CounterModel from "./ticketCounterModel.js";
 const ticketSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   subject: { type: String, required: true },
-  description: { type: String, required: true },
+  subTopic: { type: String, required: false },
+  description: { type: String, required: false },
   status: {
     type: String,
     enum: ["open", "pending", "closed"],

@@ -396,7 +396,7 @@ export const handleGetArticles = async (req, res) => {
     // Find all articles associated with the userId
     const articles = await articleModel
       .find({ userId })
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 }).populate("profileImage");
 
     if (!articles.length) {
       return res
@@ -706,14 +706,14 @@ export const handleCreateArticlesSecond = async (req, res) => {
     topicDoc.status = articleStatus.completed;
     await topicDoc.save();
 
-    // Step 4: Check if article already exists
-    const existingArticle = await articleModel
-      .findOne({ topicId: topicDoc._id.toString() })
-      .populate("profileImage topicId");
+    // // Step 4: Check if article already exists
+    // const existingArticle = await articleModel
+    //   .findOne({ topicId: topicDoc._id.toString() })
+    //   .populate("profileImage topicId");
 
-    if (existingArticle && existingArticle?.value !== "") {
-      return res.status(200).json(existingArticle);
-    }
+    // if (existingArticle && existingArticle?.value !== "") {
+    //   return res.status(200).json(existingArticle);
+    // }
 
     // Step 5: Get user details
     const user = await userModel
@@ -815,7 +815,7 @@ export const handleCreateArticlesSecond = async (req, res) => {
 **Objective:**  
 Write a professional, engaging, and insightful article about the topic: **${
       topicDoc.finalTopic
-    }**.  
+    }** and do not include the article title at the start of the article.  
 The article must strictly include the user's answers and refer to them naturally throughout the content.  
 Maintain a balance of **60% topic focus and 40% user focus**.  
 Write in the **third person**, referring to the user by their name (${userPlaceholder}). Do not use "I" or "me."

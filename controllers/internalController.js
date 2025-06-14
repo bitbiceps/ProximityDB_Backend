@@ -473,15 +473,15 @@ export const handleSelectOutlet = async (req, res) => {
 // Create a new ticket
 export const createTicket = async (req, res) => {
   try {
-    const { userId, subject, description } = req.body;
+    const { userId, subject, subTopic , description } = req.body;
 
-    if (!userId || !subject || !description) {
+    if (!userId || !subject ) {
       return res
         .status(400)
-        .json({ error: "userId, subject, and description are required" });
+        .json({ error: "userId and subject are required" });
     }
 
-    const ticket = await ticketModel.create({ userId, subject, description });
+    const ticket = await ticketModel.create({ userId, subject, description , subTopic });
 
     res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {

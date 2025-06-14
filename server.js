@@ -1,3 +1,5 @@
+
+import './config/env.js';
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -14,11 +16,8 @@ import http from "http";
 import { Server } from "socket.io";
 import session from "express-session";
 import passport from "./passport.js";
-import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import frontendRouter from "./routes/frontendRoutes.js"
-
-dotenv.config({ path: '.env.local' });
 
 const app = express();
 let userSockets = {}; // To keep track of connected users by their socket ID
