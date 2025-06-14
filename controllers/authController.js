@@ -80,20 +80,20 @@ export const verifyEmail = async (req, res) => {
     }
 
     // Find the userModel by the email encoded in the token
-    const userModel = await userModel.findOne({ email: decoded.email });
+    const user = await userModel.findOne({ email: decoded.email });
 
-    if (!userModel) {
-      return res.status(404).json({ message: "userModel not found" });
+    if (!user) {
+      return res.status(404).json({ message: "user not found" });
     }
 
     // Check if the userModel is already verified
-    if (userModel.isVerified) {
-      return res.status(400).json({ message: "userModel is already verified" });
+    if (user.isVerified) {
+      return res.status(400).json({ message: "user is already verified" });
     }
 
     // Verify the userModel
-    userModel.isVerified = true;
-    await userModel.save();
+    user.isVerified = true;
+    await user.save();
 
     // Send a success response
     res.status(200).json({ message: "Email verified. You can now log in." });
