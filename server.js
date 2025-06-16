@@ -43,7 +43,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 // Middleware
 app.use(cors({origin: process.env.NODE_ENV === "production" 
-      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press" , "https://staging.proximity.press" ,"https://proximity.press"] 
+      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press" , "https://staging.proximity.press" , "https://proximity.press", "https://internal.proximity.press"] 
       : true ,
      credentials: true }));
 
