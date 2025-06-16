@@ -233,10 +233,10 @@ export const handleTopicMarkCompleted = async (req, res) => {
       message: "Topic is verified successfully",
     });
 
-    await sendTopicVerifySuccessfully(
-      topic.userId.email,
-      topic.topics[index].value
-    );
+    // await sendTopicVerifySuccessfully(
+    //   topic.userId.email,
+    //   topic.topics[index].value
+    // );
 
     return res.status(200).json({
       message: "Topic marked as completed",
