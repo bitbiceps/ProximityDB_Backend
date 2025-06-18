@@ -13,7 +13,8 @@ import {
   handleGenerateArticle,
   handleArticleFileNameUpdate,
   handleArticleDelete,
-  handleArticlePublishRequest
+  handleArticlePublishRequest,
+  handleArticleRegenerate
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
 
@@ -32,6 +33,8 @@ articleRouter.post("/article-outlet",determineBestOutletsForArticle)
 articleRouter.post("/generate-article",handleGenerateArticle);
 articleRouter.delete("/delete/:articleId", handleArticleDelete);
 articleRouter.post("/publish-request",handleArticlePublishRequest);
+articleRouter.post("/regenerate",handleArticleRegenerate);
+
 
 
 

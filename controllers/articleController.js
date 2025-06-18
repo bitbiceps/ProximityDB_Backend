@@ -396,7 +396,8 @@ export const handleGetArticles = async (req, res) => {
     // Find all articles associated with the userId
     const articles = await articleModel
       .find({ userId })
-      .sort({ updatedAt: -1 }).populate("profileImage");
+      .sort({ updatedAt: -1 })
+      .populate("profileImage");
 
     if (!articles.length) {
       return res
@@ -680,7 +681,7 @@ export const handleGenerateArticle = async (req, res) => {
 };
 
 export const handleCreateArticlesSecond = async (req, res) => {
-  const { topicId , userId } = req.body;
+  const { topicId, userId } = req.body;
 
   try {
     // Step 1: Find topic document where nested topics array contains the topicId
@@ -921,6 +922,68 @@ export const handleArticlePublishRequest = async (req, res) => {
     console.error("Error updating article:", error);
     return res.status(500).json({
       message: "Error updating article content",
+      error: error.message,
+    });
+  }
+};
+
+export const handleArticleRegenerate = async (req, res) => {
+  try {
+    const { articleId } = req.body;
+
+    if (!articleId) {
+      return res.status(400).json({ message: "articleId is required" });
+    }
+
+    // Find the existing article
+    const existingArticle = await articleModel
+      .findById(articleId)
+
+    if (!existingArticle) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+
+    // Create the regeneration prompt
+    const regenerationPrompt = `
+Please rewrite and improve the following professional article while maintaining all key information and tone
+Imporntant: Don't include the article title at the start of the article.Just give the content.
+Focus on:
+1. Enhancing clarity and flow
+2. Improving readability while keeping the professional tone
+3. Maintaining all key points and technical accuracy
+4. Ensuring smooth transitions between sections
+
+Here is the current article content:
+${existingArticle.value}
+`;
+
+    // Call OpenAI to regenerate article
+    const response = await openAi.writer.chat.completions.create({
+      model: openAi.model,
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional editor that improves articles while preserving their core content."
+        },
+        {
+          role: "user",
+          content: regenerationPrompt,
+        },
+      ],
+      max_tokens: 1500,  // Slightly higher to allow for improvements
+      temperature: 0.5,  // Lower temperature for more conservative rewrites
+    });
+
+    const regeneratedArticle = response.choices[0].message.content.trim();
+
+    existingArticle.value = regeneratedArticle;
+    await existingArticle.save();
+
+    return res.status(200).json(existingArticle);
+  } catch (error) {
+    console.error("Error regenerating article:", error);
+    return res.status(500).json({
+      message: "An error occurred while regenerating the article",
       error: error.message,
     });
   }
