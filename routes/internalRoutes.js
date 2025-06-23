@@ -17,7 +17,12 @@ import {
   postMessage,
   closeTicket,
   getTicket,
+  addNewTeamMember,
+  getTeamMembers,
+  assignTicket,
+  getAssignedTickets,
 } from "../controllers/internalController.js";
+import requireSudo from "../middleware/internalMiddlewares.js";
 
 const internalRouter = Router();
 
@@ -40,5 +45,16 @@ internalRouter.get("/tickets", listTickets); // List tickets
 internalRouter.get("/tickets/:ticketId/messages", getMessages); // Get messages of a ticket
 internalRouter.post("/tickets/:ticketId/messages", postMessage); // Post message on a ticket
 internalRouter.patch("/tickets/:ticketId/close", closeTicket); // Post message on a ticket
+
+// tickets
+internalRouter.post("/team/add", requireSudo, addNewTeamMember);
+internalRouter.get("/team/members", requireSudo, getTeamMembers);
+// assigned tickets
+internalRouter.post("/tickets/:ticketId/assign", requireSudo, assignTicket);
+// get assigned tickets to a user
+
+// get assigned tickets to a user
+
+internalRouter.get("/team/get-tickets", getAssignedTickets);
 
 export default internalRouter;

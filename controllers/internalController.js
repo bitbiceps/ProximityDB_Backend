@@ -13,6 +13,7 @@ import {
 import MessageModel from "../models/messageModal.js";
 import teamMessageModel from "../models/teamMessageModel.js";
 import ticketModel from "../models/ticketModel.js";
+import teamModel from "../models/teamModel.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
@@ -148,13 +149,10 @@ export const handleArticleMarkCompleted = async (req, res) => {
     // Find the article document by its ID
 
     // Handle case if article is not found
-    const article = await articleModel
-      .findById(articleId)
-      .populate("userId");
+    const article = await articleModel.findById(articleId).populate("userId");
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
-
 
     // Fetch user and topic in parallel (using article.userId and articleId)
     const [user, topic] = await Promise.all([
@@ -473,15 +471,18 @@ export const handleSelectOutlet = async (req, res) => {
 // Create a new ticket
 export const createTicket = async (req, res) => {
   try {
-    const { userId, subject, subTopic = '' , description } = req.body;
+    const { userId, subject, subTopic = "", description } = req.body;
 
-    if (!userId || !subject ) {
-      return res
-        .status(400)
-        .json({ error: "userId and subject are required" });
+    if (!userId || !subject) {
+      return res.status(400).json({ error: "userId and subject are required" });
     }
 
-    const ticket = await ticketModel.create({ userId, subject, description , subTopic });
+    const ticket = await ticketModel.create({
+      userId,
+      subject,
+      description,
+      subTopic,
+    });
 
     res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {
@@ -627,5 +628,132 @@ export const closeTicket = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to close ticket", details: err.message });
+  }
+};
+
+export const addNewTeamMember = async (req, res) => {
+  const { email, role } = req.body;
+
+  if (!email || !role) {
+    return res.status(400).json({ message: "Email and role are required" });
+  }
+
+  try {
+    const exists = await teamModel.findOne({ email });
+    if (exists)
+      return res.status(400).json({ message: "Team member already exists" });
+
+    const newMember = new teamModel({ email, role });
+    await newMember.save();
+
+    res.status(201).json({ message: "Team member added", member: newMember });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error creating team member", error: err.message });
+  }
+};
+
+export const getTeamMembers = async (req, res) => {
+  try {
+    const members = await teamModel.find({}, "email role createdAt"); // limit fields if needed
+    res.status(200).json({ members });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching team members", error: err.message });
+  }
+};
+
+export const assignTicket = async (req, res) => {
+  const { ticketId } = req.params;
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ message: "Username is required" });
+  }
+
+  try {
+    const assignee = await teamModel.findOne({ username });
+    if (!assignee) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    const ticket = await ticketModel.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    // Update current assignee
+    ticket.assignee = assignee._id;
+
+    // Add assignment to history
+    ticket.assignmentHistory.push({
+      assignedTo: assignee._id,
+      assignedBy: req.user?._id || null, // assumes requireSudo attaches req.user
+      assignedAt: new Date(),
+    });
+
+    await ticket.save();
+
+    res.status(200).json({
+      message: `Ticket assigned to ${username}`,
+      ticket,
+    });
+  } catch (err) {
+    console.error("Error assigning ticket:", err);
+    res.status(500).json({
+      message: "Error assigning ticket",
+      error: err.message,
+    });
+  }
+};
+
+export const getAssignedTickets = async (req, res) => {
+  const email = req.headers["internal-user-email"];
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!email) {
+    return res.status(400).json({ message: "Missing x-user-email header" });
+  }
+
+  try {
+    const member = await teamModel.findOne({ email: email.toLowerCase() });
+    if (!member) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    let query = {};
+    if (member.role === "team") {
+      query.assignee = member._id;
+    }
+
+    const totalTickets = await ticketModel.countDocuments(query);
+    const tickets = await ticketModel
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("userId", "email") // who created the ticket
+      .populate("assignee", "username email"); // who's assigned
+
+    res.status(200).json({
+      message:
+        member.role === "sudo"
+          ? "All tickets"
+          : `Tickets assigned to ${member.username}`,
+      total: totalTickets,
+      page,
+      pageSize: limit,
+      tickets,
+    });
+  } catch (err) {
+    console.error("Error fetching tickets:", err);
+    res.status(500).json({
+      message: "Failed to fetch tickets",
+      error: err.message,
+    });
   }
 };
