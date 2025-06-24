@@ -32,6 +32,7 @@ export const registerUser = async (req, res) => {
         .json({ message: "Email is already registered" });
     }
 
+
     // const existingPhoneNumber = await userModel.findOne({ phoneNumber });
     // if (existingPhoneNumber) {
     //   return res

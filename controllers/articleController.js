@@ -684,22 +684,28 @@ export const handleCreateArticlesSecond = async (req, res) => {
   const { topicId, userId } = req.body;
 
   try {
-    // Step 1: Find topic document where nested topics array contains the topicId
-    const topicDoc = await topicModel.findOne({ "topics._id": topicId });
+    // const topicDoc = await topicModel.findOne({ "topics._id": topicId });
+    const topicDoc = await topicModel.findById(topicId);
 
     if (!topicDoc) {
       return res.status(404).json({ message: "Topic document not found" });
     }
 
-    // Step 2: Find the actual topic object inside the array
-    const matchedTopic = topicDoc.topics.find(
-      (topic) => topic._id.toString() === topicId
-    );
+    // // Step 2: Find the actual topic object inside the array
+    // const matchedTopic = topicDoc.topics.find(
+    //   (topic) => topic._id.toString() === topicId
+    // );
 
-    if (!matchedTopic) {
+    // if (!matchedTopic) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "No matching topic found in array" });
+    // }
+
+    if (!topicDoc.finalTopic) {
       return res
         .status(400)
-        .json({ message: "No matching topic found in array" });
+        .json({ message: "Please get your topics verified" });
     }
 
     // Step 3: Set finalTopic = matchedTopic.value
