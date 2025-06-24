@@ -43,7 +43,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 // Middleware
 app.use(cors({origin: process.env.NODE_ENV === "production" 
-      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press" , "https://staging.proximity.press" , "https://proximity.press", "https://internal.proximity.press"] 
+      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press" , "https://staging.proximity.press" , "https://proximity.press", "https://internal.proximity.press" , "https://dashboard.proximity.press"] 
       : true ,
      credentials: true }));
 
@@ -109,7 +109,7 @@ export const sendNotification = ({ userId, message }) => {
 // Test route to ensure server is working
 app.get("/", async (req, res) => {
   try {
-    return res.status(200).json({ message: "Server working successfully!!" });
+    return res.status(200).json({ message: "Server working successfully!" });
   } catch (error) {
     return res.status(500).json(error);
   }
