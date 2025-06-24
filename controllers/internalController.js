@@ -73,47 +73,39 @@ export const getAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    console.log(page, limit);
     const skip = (page - 1) * limit;
 
-    // Get the total number of users using the faster estimatedDocumentCount
-    const totalUsers = await userModel.estimatedDocumentCount();
+    // Get the total number of users
+    const totalUsers = await userModel.countDocuments();
 
-    // Fetch users based on page and limit using range-based pagination
-    let users;
-    if (page > 1) {
-      const lastUser = await userModel
-        .find()
-        .sort({ _id: -1 })
-        .skip((page - 1) * limit)
-        .limit(1);
-      if (lastUser.length > 0) {
-        const lastUserId = lastUser[0]._id;
-        users = await userModel.find({ _id: { $gt: lastUserId } }).limit(limit);
-      }
-    } else {
-      users = await userModel.find().limit(limit);
-    }
+    // Fetch users with proper pagination
+    const users = await userModel.find()
+      .select('-questionnaire')
+      .sort({ _id: 1 }) // Consistent sorting
+      .skip(skip)
+      .limit(limit)
+      .exec(); // Add exec() to ensure query executes
 
-    if (users.length > 0) {
-      return res.status(200).json({
-        message: "Successful",
-        users,
-        pagination: {
-          totalUsers,
-          currentPage: page,
-          totalPages: Math.ceil(totalUsers / limit),
-          pageSize: limit,
-        },
-      });
-    }
+    return res.status(200).json({
+      message: "Successful",
+      users,
+      pagination: {
+        totalUsers,
+        currentPage: page,
+        totalPages: Math.ceil(totalUsers / limit),
+        pageSize: limit,
+      },
+    });
 
-    throw new Error("No users found");
   } catch (error) {
-    console.error(error); // Log the error for debugging
-    return res.status(500).json({ message: error.message });
+    console.error("Error fetching users:", error);
+    return res.status(500).json({ 
+      message: "Internal server error",
+      error: error.message 
+    });
   }
 };
-
 export const getReviewCounts = async (req, res) => {
   try {
     const { userId } = req.query;
@@ -565,6 +557,7 @@ export const postMessage = async (req, res) => {
     const { senderId, senderRole, text } = req.body;
 
     // 🚨 Validate required fields
+    
     if (![ticketId, senderId, senderRole, text].every(Boolean)) {
       return res.status(400).json({
         error: "ticketId, senderId, senderRole, and text are required",
@@ -755,5 +748,84 @@ export const getAssignedTickets = async (req, res) => {
       message: "Failed to fetch tickets",
       error: err.message,
     });
+  }
+};
+
+export const ticketListUserWise = async (req, res) => {
+  try {
+      const tickets = await ticketModel.find().sort({ createdAt: -1 });
+      
+      // Get all unique user IDs from the tickets
+      const userIds = [...new Set(tickets.map(t => t.userId?.toString()).filter(Boolean))];
+      
+      // Fetch all users in one query
+      const users = await userModel.find({ 
+        _id: { $in: userIds } 
+      }).select('fullName email'); // Select only needed fields
+
+      // Create a map for quick user lookup
+      const userMap = new Map();
+      users.forEach(user => {
+        userMap.set(user._id.toString(), {
+          _id: user._id,
+          fullName: user.fullName,
+          email: user.email
+        });
+      });
+
+      // Group tickets by user
+      const resultMap = new Map();
+      
+      // Initialize with found users
+      users.forEach(user => {
+        const userIdStr = user._id.toString();
+        resultMap.set(userIdStr, {
+          userDetails: {
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email
+          },
+          ticketData: []
+        });
+      });
+
+      // Assign tickets to users
+      tickets.forEach(ticket => {
+        if (!ticket.userId) {
+          // Skip tickets with no user ID
+          return;
+        }
+
+        const userIdStr = ticket.userId.toString();
+        const userGroup = resultMap.get(userIdStr);
+        
+        if (userGroup) {
+          userGroup.ticketData.push({
+            _id: ticket._id,
+            subject: ticket.subject,
+            subTopic: ticket.subTopic,
+            description: ticket.description,
+            status: ticket.status,
+            ticketId: ticket.ticketId,
+            createdAt: ticket.createdAt,
+            updatedAt: ticket.updatedAt
+          });
+        }
+      });
+
+      // Convert to array and filter out empty groups
+      const result = Array.from(resultMap.values()).filter(group => 
+        group.ticketData.length > 0
+      );
+
+      return res.status(200).json({
+        message: "Tickets fetched successfully",
+        data: result
+      }); 
+  } catch (err) {
+    console.error("listTickets error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch tickets", details: err.message });
   }
 };

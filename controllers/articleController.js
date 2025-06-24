@@ -487,6 +487,15 @@ export const determineBestOutletsForArticle = async (req, res) => {
       return res.status(404).json({ message: "Article not found" });
     }
 
+  if (article.metaData?.outlets && article.metaData.outlets.length > 0) {
+      return res.status(200).json({
+        message: "Best outlets already determined",
+        articleId: article._id,
+        bestOutlets: article.metaData.outlets,
+      });
+    }
+
+
     const bestOutlets = await determineBestOutlets(article.value);
 
     article = await articleModel.findByIdAndUpdate(
