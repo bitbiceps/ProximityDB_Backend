@@ -827,5 +827,38 @@ export const ticketListUserWise = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to fetch tickets", details: err.message });
+}
+}
+
+export const teamLogin = async (req, res) => {
+  const email = req.headers["internal-user-email"];
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ message: "Missing internal-user-email header" });
+  }
+
+  try {
+    const member = await teamModel.findOne({ email: email.toLowerCase() });
+
+    if (!member) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Not a team member" });
+    }
+
+    // Optional: You can return role/info if needed for frontend
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        username: member.username,
+        email: member.email,
+        role: member.role,
+      },
+    });
+  } catch (error) {
+    console.error("Team login failed:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };

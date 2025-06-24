@@ -58,5 +58,6 @@ internalRouter.post("/tickets/:ticketId/assign", requireSudo, assignTicket);
 // get assigned tickets to a user
 
 internalRouter.get("/team/get-tickets", getAssignedTickets);
+internalRouter.get("/team/login", getAssignedTickets);
 
 export default internalRouter;
