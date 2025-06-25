@@ -866,3 +866,95 @@ export const teamLogin = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+export const assignArticle = async (req, res) => {
+  const { articleId } = req.params;
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ message: "Username is required" });
+  }
+
+  try {
+    const assignee = await teamModel.findOne({ username });
+    if (!assignee) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    const article = await articleModel.findById(articleId);
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+
+    // Update current assignee
+    article.assignee = assignee._id;
+
+    // Add assignment to history
+    article.assignmentHistory.push({
+      assignedTo: assignee._id,
+      assignedBy: req.user?._id || null, // assumes requireSudo attaches req.user
+      assignedAt: new Date(),
+    });
+
+    await article.save();
+
+    res.status(200).json({
+      message: `Article assigned to ${username}`,
+      article,
+    });
+  } catch (err) {
+    console.error("Error assigning article:", err);
+    res.status(500).json({
+      message: "Error assigning article",
+      error: err.message,
+    });
+  }
+};
+export const getAssignedArticles = async (req, res) => {
+  const email = req.headers["internal-user-email"];
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!email) {
+    return res.status(400).json({ message: "Missing x-user-email header" });
+  }
+
+  try {
+    const member = await teamModel.findOne({ email: email.toLowerCase() });
+    if (!member) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    let query = {};
+    if (member.role === "team") {
+      query.assignee = member._id;
+    }
+
+    const totalArticles = await articleModel.countDocuments(query);
+    const articles = await articleModel
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("userId", "email") // who created the ticket
+      .populate("assignee", "username email"); // who's assigned
+
+    return await res.status(200).json({
+      message:
+        member.role === "sudo"
+          ? "All Articles"
+          : `Articles assigned to ${member.username}`,
+      total: totalArticles,
+      page,
+      pageSize: limit,
+      articles,
+    });
+  } catch (err) {
+    console.error("Error fetching Articles:", err);
+    res.status(500).json({
+      message: "Failed to fetch Articles",
+      error: err.message,
+    });
+  }
+};
