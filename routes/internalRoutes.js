@@ -21,7 +21,8 @@ import {
   getTeamMembers,
   assignTicket,
   getAssignedTickets,
-  ticketListUserWise
+  ticketListUserWise,
+  teamLogin
 } from "../controllers/internalController.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
 
@@ -58,6 +59,6 @@ internalRouter.post("/tickets/:ticketId/assign", requireSudo, assignTicket);
 // get assigned tickets to a user
 
 internalRouter.get("/team/get-tickets", getAssignedTickets);
-internalRouter.get("/team/login", getAssignedTickets);
+internalRouter.get("/team/login", teamLogin);
 
 export default internalRouter;

@@ -80,8 +80,9 @@ export const getAllUsers = async (req, res) => {
     const totalUsers = await userModel.countDocuments();
 
     // Fetch users with proper pagination
-    const users = await userModel.find()
-      .select('-questionnaire')
+    const users = await userModel
+      .find()
+      .select("-questionnaire")
       .sort({ _id: 1 }) // Consistent sorting
       .skip(skip)
       .limit(limit)
@@ -97,12 +98,11 @@ export const getAllUsers = async (req, res) => {
         pageSize: limit,
       },
     });
-
   } catch (error) {
     console.error("Error fetching users:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       message: "Internal server error",
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -557,7 +557,7 @@ export const postMessage = async (req, res) => {
     const { senderId, senderRole, text } = req.body;
 
     // 🚨 Validate required fields
-    
+
     if (![ticketId, senderId, senderRole, text].every(Boolean)) {
       return res.status(400).json({
         error: "ticketId, senderId, senderRole, and text are required",
@@ -649,7 +649,7 @@ export const addNewTeamMember = async (req, res) => {
 
 export const getTeamMembers = async (req, res) => {
   try {
-    const members = await teamModel.find({}, "email role createdAt"); // limit fields if needed
+    const members = await teamModel.find({}, "username email role createdAt"); // limit fields if needed
     res.status(200).json({ members });
   } catch (err) {
     res
@@ -753,82 +753,86 @@ export const getAssignedTickets = async (req, res) => {
 
 export const ticketListUserWise = async (req, res) => {
   try {
-      const tickets = await ticketModel.find().sort({ createdAt: -1 });
-      
-      // Get all unique user IDs from the tickets
-      const userIds = [...new Set(tickets.map(t => t.userId?.toString()).filter(Boolean))];
-      
-      // Fetch all users in one query
-      const users = await userModel.find({ 
-        _id: { $in: userIds } 
-      }).select('fullName email'); // Select only needed fields
+    const tickets = await ticketModel
+      .find({ status: { $ne: "closed" } })
+      .sort({ createdAt: -1 });
+    // Get all unique user IDs from the tickets
+    const userIds = [
+      ...new Set(tickets.map((t) => t.userId?.toString()).filter(Boolean)),
+    ];
 
-      // Create a map for quick user lookup
-      const userMap = new Map();
-      users.forEach(user => {
-        userMap.set(user._id.toString(), {
+    // Fetch all users in one query
+    const users = await userModel
+      .find({
+        _id: { $in: userIds },
+      })
+      .select("fullName email"); // Select only needed fields
+
+    // Create a map for quick user lookup
+    const userMap = new Map();
+    users.forEach((user) => {
+      userMap.set(user._id.toString(), {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+      });
+    });
+
+    // Group tickets by user
+    const resultMap = new Map();
+
+    // Initialize with found users
+    users.forEach((user) => {
+      const userIdStr = user._id.toString();
+      resultMap.set(userIdStr, {
+        userDetails: {
           _id: user._id,
           fullName: user.fullName,
-          email: user.email
+          email: user.email,
+        },
+        ticketData: [],
+      });
+    });
+
+    // Assign tickets to users
+    tickets.forEach((ticket) => {
+      if (!ticket.userId) {
+        return;
+      }
+
+      const userIdStr = ticket.userId.toString();
+      const userGroup = resultMap.get(userIdStr);
+
+      if (userGroup) {
+        userGroup.ticketData.push({
+          _id: ticket._id,
+          subject: ticket.subject,
+          subTopic: ticket.subTopic,
+          description: ticket.description,
+          status: ticket.status,
+          ticketId: ticket.ticketId,
+          createdAt: ticket.createdAt,
+          updatedAt: ticket.updatedAt,
         });
-      });
+      }
+    });
 
-      // Group tickets by user
-      const resultMap = new Map();
-      
-      // Initialize with found users
-      users.forEach(user => {
-        const userIdStr = user._id.toString();
-        resultMap.set(userIdStr, {
-          userDetails: {
-            _id: user._id,
-            fullName: user.fullName,
-            email: user.email
-          },
-          ticketData: []
-        });
-      });
+    // Convert to array and filter out empty groups
+    const result = Array.from(resultMap.values()).filter(
+      (group) => group.ticketData.length > 0
+    );
 
-      // Assign tickets to users
-      tickets.forEach(ticket => {
-        if (!ticket.userId) {
-          // Skip tickets with no user ID
-          return;
-        }
-
-        const userIdStr = ticket.userId.toString();
-        const userGroup = resultMap.get(userIdStr);
-        
-        if (userGroup) {
-          userGroup.ticketData.push({
-            _id: ticket._id,
-            subject: ticket.subject,
-            subTopic: ticket.subTopic,
-            description: ticket.description,
-            status: ticket.status,
-            ticketId: ticket.ticketId,
-            createdAt: ticket.createdAt,
-            updatedAt: ticket.updatedAt
-          });
-        }
-      });
-
-      // Convert to array and filter out empty groups
-      const result = Array.from(resultMap.values()).filter(group => 
-        group.ticketData.length > 0
-      );
-
-      return res.status(200).json({
-        message: "Tickets fetched successfully",
-        data: result
-      }); 
+    return res.status(200).json({
+      message: "Tickets fetched successfully",
+      data: result,
+    });
   } catch (err) {
     console.error("listTickets error:", err);
     res
       .status(500)
       .json({ error: "Failed to fetch tickets", details: err.message });
-}
-}
+  }
+};
 
 export const teamLogin = async (req, res) => {
   const email = req.headers["internal-user-email"];
