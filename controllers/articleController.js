@@ -691,7 +691,7 @@ export const handleCreateArticlesSecond = async (req, res) => {
       return res.status(404).json({ message: "Topic document not found" });
     }
 
-    // // Step 2: Find the actual topic object inside the array
+    // Step 2: Find the actual topic object inside the array
     // const matchedTopic = topicDoc.topics.find(
     //   (topic) => topic._id.toString() === topicId
     // );
@@ -708,19 +708,19 @@ export const handleCreateArticlesSecond = async (req, res) => {
         .json({ message: "Please get your topics verified" });
     }
 
-    // Step 3: Set finalTopic = matchedTopic.value
-    topicDoc.finalTopic = matchedTopic.value;
-    topicDoc.status = articleStatus.completed;
-    await topicDoc.save();
+    // // Step 3: Set finalTopic = matchedTopic.value
+    // topicDoc.finalTopic = matchedTopic.value;
+    // topicDoc.status = articleStatus.completed;
+    // await topicDoc.save();
 
-    // // Step 4: Check if article already exists
-    // const existingArticle = await articleModel
-    //   .findOne({ topicId: topicDoc._id.toString() })
-    //   .populate("profileImage topicId");
+    // Step 4: Check if article already exists
+    const existingArticle = await articleModel
+      .findOne({ topicId: topicDoc._id.toString() })
+      .populate("profileImage topicId");
 
-    // if (existingArticle && existingArticle?.value !== "") {
-    //   return res.status(200).json(existingArticle);
-    // }
+    if (existingArticle && existingArticle?.value !== "") {
+      return res.status(200).json(existingArticle);
+    }
 
     // Step 5: Get user details
     const user = await userModel
@@ -875,8 +875,8 @@ ${questions
       value: finalArticle,
       topicId: topicDoc._id,
       userId,
-      selectedTopic: matchedTopic.value,
-      fileName: matchedTopic.value,
+      selectedTopic: topicDoc.finalTopic,
+      fileName: topicDoc.finalTopic,
     });
 
     // Step 10: Link articleId back to topicDoc
@@ -942,8 +942,7 @@ export const handleArticleRegenerate = async (req, res) => {
     }
 
     // Find the existing article
-    const existingArticle = await articleModel
-      .findById(articleId)
+    const existingArticle = await articleModel.findById(articleId);
 
     if (!existingArticle) {
       return res.status(404).json({ message: "Article not found" });
@@ -969,15 +968,16 @@ ${existingArticle.value}
       messages: [
         {
           role: "system",
-          content: "You are a professional editor that improves articles while preserving their core content."
+          content:
+            "You are a professional editor that improves articles while preserving their core content.",
         },
         {
           role: "user",
           content: regenerationPrompt,
         },
       ],
-      max_tokens: 1500,  // Slightly higher to allow for improvements
-      temperature: 0.5,  // Lower temperature for more conservative rewrites
+      max_tokens: 1500, // Slightly higher to allow for improvements
+      temperature: 0.5, // Lower temperature for more conservative rewrites
     });
 
     const regeneratedArticle = response.choices[0].message.content.trim();

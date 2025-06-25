@@ -44,6 +44,21 @@ const articleSchema = new mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: "ArticleImage",
     },
+    // current assignee
+    assignee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
+      default: null,
+    },
+
+    // assignment history
+    assignmentHistory: [
+      {
+        assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
+        assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
+        assignedAt: { type: Date, default: Date.now },
+      },
+    ],
     metaData: {
       termsAndCondition: { type: Boolean, default: false },
       companyName: { type: Boolean, default: false },

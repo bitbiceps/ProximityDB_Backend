@@ -17,6 +17,7 @@ import {
   handleArticleRegenerate
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
+import requireSudo from "../middleware/internalMiddlewares.js";
 
 const articleRouter = Router();
 
@@ -34,6 +35,7 @@ articleRouter.post("/generate-article",handleGenerateArticle);
 articleRouter.delete("/delete/:articleId", handleArticleDelete);
 articleRouter.post("/publish-request",handleArticlePublishRequest);
 articleRouter.post("/regenerate",handleArticleRegenerate);
+
 
 
 
