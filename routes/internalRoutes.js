@@ -27,7 +27,8 @@ import {
   getAssignedArticles,
   handleAddCustomStatus,
   handleGetUnassignedArticles,
-  getUserDetails
+  getUserDetails,
+  handleAddOutlet
 } from "../controllers/internalController.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
 
@@ -45,6 +46,7 @@ internalRouter.post("/update-topic-suggestion", handleTopicSuggestion); // for a
 internalRouter.get("/allMessageList", fetchAllUserMessageList);
 internalRouter.post("/read-messsage", handleReadMessage);
 internalRouter.post("/select-outlet", handleSelectOutlet);
+internalRouter.post("/add-outlet", handleAddOutlet);
 
 // Team Messages
 internalRouter.post("/tickets", createTicket); // Create ticket
