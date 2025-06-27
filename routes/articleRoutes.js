@@ -34,8 +34,7 @@ articleRouter.post("/get", handleGetArticlesById);
 articleRouter.post("/article-outlet",determineBestOutletsForArticle)
 articleRouter.post("/generate-article",handleGenerateArticle);
 articleRouter.delete("/delete/:articleId", handleArticleDelete);
-articleRouter.post("/publish-request",handleArticlePublishRequest);
-articleRouter.post("/update-status", handleArticlePublishRequest);
+articleRouter.post("/update-status",handleArticleStatusUpdate);
 articleRouter.post("/regenerate",handleArticleRegenerate);
 articleRouter.get("/active-articles/:id", handleGetActiveArticles);
 

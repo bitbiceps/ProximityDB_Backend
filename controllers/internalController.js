@@ -1167,3 +1167,27 @@ export const getUserDetails = async (req, res) => {
     });
   }
 };
+
+
+export const handleAddOutlet = async (req, res) => {
+  const {outletName , articleId} = req.body;
+  if (!outletName || !articleId) {
+    return res.status(400).json({ message: "Outlet name and article ID are required" });
+  }
+  try {
+    const article = await articleModel.findById(articleId);
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    const newOutlet = {
+      Outlets_Name : outletName
+    }
+
+    article.metaData.outlets.push(newOutlet);
+    await article.save();
+
+    return res.status(200).json({ message: "Outlet added successfully", article });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
