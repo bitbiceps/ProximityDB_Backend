@@ -74,4 +74,8 @@ internalRouter.get("/team/login", teamLogin);
 internalRouter.get("/team/unassigned" , handleGetUnassignedArticles)
 internalRouter.post("/article/add-status", requireSudo, handleAddCustomStatus)
 
+// assigned tickets
+internalRouter.post("/tickets/:ticketId/assign", assignTicket);
+
+
 export default internalRouter;

@@ -9,6 +9,7 @@ import { sendNotification } from "../server.js";
 import {
   sendTopicVerifySuccessfully,
   sendArticleVerifySuccesfullly,
+  sendWelcomeEmailToTeam,
 } from "../helpers/mailer.js";
 import MessageModel from "../models/messageModal.js";
 import teamMessageModel from "../models/teamMessageModel.js";
@@ -683,6 +684,8 @@ export const addNewTeamMember = async (req, res) => {
 
     const newMember = new teamModel({username , email , role });
     await newMember.save();
+    sendWelcomeEmailToTeam(email)
+
 
     res.status(201).json({ message: "Team member added", member: newMember });
   } catch (err) {
