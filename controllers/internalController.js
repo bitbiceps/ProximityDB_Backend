@@ -27,8 +27,7 @@ export const handleGetAllCount = async (req, res) => {
       });
     }
 
-    // Find the team member
-    const member = await teamModel.findById(teamId);
+    const member = await teamModel.findById(teamId).select('role _id');
     if (!member) {
       return res.status(404).json({
         success: false,
@@ -36,91 +35,95 @@ export const handleGetAllCount = async (req, res) => {
       });
     }
 
-    const articleStatus = {
-      underReview: "under review",
-      publish: "publish",
-      unpublish: "unpublish",
+    // Status constants
+    const STATUS = {
+      UNDER_REVIEW: "under review",
+      PUBLISH: "publish",
+      UNPUBLISH: "unpublish"
     };
 
-    let counts = {};
-
     if (member.role === "sudo") {
-      // For sudo users - get total articles, unassigned articles, and published articles
-      const [totalArticles, unassignedArticles, totalPublish , totalUnderReview, totalUnpublished] =
-        await Promise.all([
-          articleModel.countDocuments({}),
-          articleModel.countDocuments({ assignee: null }),
-          articleModel.countDocuments({ status: articleStatus.publish }),
-          articleModel.countDocuments({ status: articleStatus.underReview }),
-          articleModel.countDocuments({ status: articleStatus.unpublish }),
-        ]);
-
-      counts = {
-        total: totalArticles,
-        unassigned: unassignedArticles,
-        totalPublish: totalPublish,
-        underReview: totalUnderReview,
-        unpublished: totalUnpublished,
-      };
-    } else {
-      // For team members - get counts of assigned articles by status
-      const statusAggregation = await articleModel.aggregate([
+      const results = await articleModel.aggregate([
         {
-          $match: {
-            assignee: member._id,
-            status: {
-              $in: [
-                articleStatus.underReview,
-                articleStatus.publish,
-                articleStatus.unpublish,
-              ],
-            },
-          },
-        },
-        {
-          $group: {
-            _id: "$status",
-            count: { $sum: 1 },
-          },
-        },
+          $facet: {
+            total: [{ $count: "count" }],
+            unassigned: [{ $match: { assignee: null } }, { $count: "count" }],
+            byStatus: [
+              {
+                $group: {
+                  _id: "$status",
+                  count: { $sum: 1 }
+                }
+              }
+            ]
+          }
+        }
       ]);
 
-      // Initialize with 0 counts
-      counts = {
-        underReview: 0,
-        publish: 0,
-        unpublish: 0,
+      const counts = {
+        total: results[0].total[0]?.count || 0,
+        unassigned: results[0].unassigned[0]?.count || 0,
+        totalPublish: results[0].byStatus.find(s => s._id === STATUS.PUBLISH)?.count || 0,
+        underReview: results[0].byStatus.find(s => s._id === STATUS.UNDER_REVIEW)?.count || 0,
+        unpublished: results[0].byStatus.find(s => s._id === STATUS.UNPUBLISH)?.count || 0
       };
 
-      // Update counts based on aggregation results
-      statusAggregation.forEach((item) => {
-        if (item._id === articleStatus.inReview) {
-          counts.underReview = item.count;
-        } else if (item._id === articleStatus.publish) {
-          counts.publish = item.count;
-        } else if (item._id === articleStatus.unpublish) {
-          counts.unpublish = item.count;
-        }
-      });
-
-      // Get total assigned articles count
-      counts.totalAssigned = await articleModel.countDocuments({
-        assignee: member._id,
+      return res.status(200).json({
+        success: true,
+        message: "Dashboard counts fetched successfully",
+        data: counts,
+        role: member.role
       });
     }
+
+    const results = await articleModel.aggregate([
+      {
+        $match: {
+          assignee: member._id,
+          status: { $in: [STATUS.UNDER_REVIEW, STATUS.PUBLISH, STATUS.UNPUBLISH] }
+        }
+      },
+      {
+        $facet: {
+          byStatus: [
+            {
+              $group: {
+                _id: "$status",
+                count: { $sum: 1 }
+              }
+            }
+          ],
+          totalAssigned: [{ $count: "count" }]
+        }
+      }
+    ]);
+
+    const counts = {
+      underReview: 0,
+      publish: 0,
+      unpublish: 0,
+      totalAssigned: results[0].totalAssigned[0]?.count || 0
+    };
+
+    results[0].byStatus.forEach(({ _id, count }) => {
+      if (_id === STATUS.UNDER_REVIEW) counts.underReview = count;
+      if (_id === STATUS.PUBLISH) counts.publish = count;
+      if (_id === STATUS.UNPUBLISH) counts.unpublish = count;
+    });
 
     return res.status(200).json({
       success: true,
       message: "Dashboard counts fetched successfully",
       data: counts,
-      role: member.role,
+      role: member.role
     });
+
   } catch (error) {
     console.error("Error fetching article counts:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message,
+      error: error.message
     });
   }
 };
