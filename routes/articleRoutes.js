@@ -13,7 +13,7 @@ import {
   handleGenerateArticle,
   handleArticleFileNameUpdate,
   handleArticleDelete,
-  handleArticlePublishRequest,
+  handleArticleStatusUpdate,
   handleArticleRegenerate,
   handleGetActiveArticles
 } from "../controllers/articleController.js";

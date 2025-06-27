@@ -928,7 +928,7 @@ ${questions
   }
 };
 
-export const handleArticlePublishRequest = async (req, res) => {
+export const handleArticleStatusUpdate = async (req, res) => {
   const { articleId , status } = req.body;
   if (!articleId) {
     return res.status(400).json({ message: "articleId are required" });
