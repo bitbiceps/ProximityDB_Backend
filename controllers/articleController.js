@@ -227,31 +227,37 @@ export const handleArticleContentUpdate = async (req, res) => {
   }
 
   try {
-    const article = await articleModel.findByIdAndUpdate(
+    const currentArticle = await articleModel.findById(articleId);
+    
+    if (!currentArticle) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    const updatedArticle = await articleModel.findByIdAndUpdate(
       articleId,
-      { updateRequested: false, updatedContent: "", value: content },
+      { 
+        updateRequested: false,
+        prevContent: currentArticle.value,
+        value: content
+      },
       { new: true }
     );
 
-    if (!article) {
-      return res.status(404).json({ message: "Article not found" });
-    }
 
     const newMessage = await MessageModel.create({
-      userId: article?.userId,
+      userId: currentArticle?.userId,
       messageType: "article_update",
       articleId,
       content: "Article is updated successfully",
     });
 
     sendNotification({
-      userId: article?.userId,
+      userId: currentArticle?.userId,
       message: "Article Updated succesfully",
     });
 
     return res.status(200).json({
       message: "Article content updated successfully",
-      article,
+      article: updatedArticle,
     });
   } catch (error) {
     console.error("Error updating article:", error);
@@ -427,7 +433,11 @@ export const handleGetArticlesById = async (req, res) => {
     // Find all articles associated with the userId
     const article = await articleModel
       .findById(articleId)
-      .populate("profileImage");
+      .populate("profileImage") 
+      .populate({
+        path: "userId",
+        select: "email fullName",
+      });
 
     if (!article) {
       return res
@@ -520,6 +530,18 @@ export const determineBestOutletsForArticle = async (req, res) => {
 
 export const handleGenerateArticle = async (req, res) => {
   const { userId, topic } = req.body;
+    const existingArticles = await articleModel.find({
+      userId,
+      status: { $ne: 'publish' } 
+    });
+
+    if (existingArticles.length > 0) {
+      return res.status(400).json({
+        message: "Cannot generate new article. You already have an active (unpublished) article.",
+        existingArticleId: existingArticles[0]._id
+      });
+    }
+
 
   try {
     const user = await userModel.findById(userId).select({
@@ -907,16 +929,14 @@ ${questions
 };
 
 export const handleArticlePublishRequest = async (req, res) => {
-  const { articleId } = req.body;
-
+  const { articleId , status } = req.body;
   if (!articleId) {
     return res.status(400).json({ message: "articleId are required" });
   }
-
   try {
     const article = await articleModel.findByIdAndUpdate(
       articleId,
-      { status: "under review" },
+      { status: status },
       { new: true }
     );
 
@@ -1003,3 +1023,26 @@ ${existingArticle.value}
     });
   }
 };
+
+export const handleGetActiveArticles = async (req, res) => {
+  try {
+    const { id: userId } = req.params;
+
+    const articles = await articleModel
+      .find({ 
+        status: { $ne: "publish" }, 
+        userId: userId 
+      })
+      .populate("profileImage topicId");
+
+    if (!articles.length) {
+          return res.status(200).json({ message: "Success", activeArticles: 0 });
+    }
+
+    return res.status(200).json({ message: "Success", activeArticles: articles.length });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "An error occurred", error: error.message });
+  }
+};
+

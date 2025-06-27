@@ -25,13 +25,17 @@ import {
   teamLogin,
   assignArticle,
   getAssignedArticles,
+  handleAddCustomStatus,
+  handleGetUnassignedArticles,
+  getUserDetails
 } from "../controllers/internalController.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
 
 const internalRouter = Router();
 
-internalRouter.get("/stats", handleGetAllCount);
-internalRouter.get("/users", getAllUsers);
+internalRouter.post("/stats", handleGetAllCount);
+internalRouter.post("/users", getAllUsers);
+internalRouter.post("/user-details" , getUserDetails);
 internalRouter.get("/review/count", getReviewCounts);
 internalRouter.patch("/complete-article", handleArticleMarkCompleted);
 internalRouter.patch("/complete-topic", handleTopicMarkCompleted);
@@ -53,7 +57,7 @@ internalRouter.patch("/tickets/:ticketId/close", closeTicket); // Post message o
 
 // tickets
 internalRouter.post("/team/add", requireSudo, addNewTeamMember);
-internalRouter.get("/team/members", requireSudo, getTeamMembers);
+internalRouter.get("/team/members", getTeamMembers);
 // assigned tickets
 internalRouter.post("/tickets/:ticketId/assign", requireSudo, assignTicket);
 internalRouter.post("/article/:articleId/assign", requireSudo, assignArticle);
@@ -61,8 +65,13 @@ internalRouter.post("/article/:articleId/assign", requireSudo, assignArticle);
 // get assigned tickets to a user
 
 internalRouter.get("/team/get-tickets", getAssignedTickets);
-//
+//get assigned articles to a user
+
 internalRouter.get("/team/get-articles", getAssignedArticles);
 internalRouter.get("/team/login", teamLogin);
+
+// add extra status 
+internalRouter.get("/team/unassigned" , handleGetUnassignedArticles)
+internalRouter.post("/article/add-status", requireSudo, handleAddCustomStatus)
 
 export default internalRouter;

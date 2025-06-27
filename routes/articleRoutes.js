@@ -14,7 +14,8 @@ import {
   handleArticleFileNameUpdate,
   handleArticleDelete,
   handleArticlePublishRequest,
-  handleArticleRegenerate
+  handleArticleRegenerate,
+  handleGetActiveArticles
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
@@ -34,7 +35,9 @@ articleRouter.post("/article-outlet",determineBestOutletsForArticle)
 articleRouter.post("/generate-article",handleGenerateArticle);
 articleRouter.delete("/delete/:articleId", handleArticleDelete);
 articleRouter.post("/publish-request",handleArticlePublishRequest);
+articleRouter.post("/update-status", handleArticlePublishRequest);
 articleRouter.post("/regenerate",handleArticleRegenerate);
+articleRouter.get("/active-articles/:id", handleGetActiveArticles);
 
 
 
