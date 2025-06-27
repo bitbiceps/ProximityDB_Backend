@@ -9,59 +9,112 @@ import { sendNotification } from "../server.js";
 import {
   sendTopicVerifySuccessfully,
   sendArticleVerifySuccesfullly,
+  sendWelcomeEmailToTeam,
 } from "../helpers/mailer.js";
 import MessageModel from "../models/messageModal.js";
 import teamMessageModel from "../models/teamMessageModel.js";
 import ticketModel from "../models/ticketModel.js";
+import teamModel from "../models/teamModel.js";
 
 export const handleGetAllCount = async (req, res) => {
   try {
-    // Aggregation to count documents by status from both articleModel and topicModel
-    const statusCounts = await articleModel.aggregate([
-      // Combine with topicModel collection
-      {
-        $unionWith: {
-          coll: "topics", // Correct the name of the collection (ensure it is lowercase if it's `topics`)
-        },
-      },
-      {
-        $group: {
-          _id: "$status", // Group by the 'status' field
-          count: { $sum: 1 }, // Count the documents for each status
-        },
-      },
-    ]);
+    const { teamId } = req.body;
 
-    // Initialize the response object with default values
-    const count = {
-      pending: { count: 0, rise: 8.5 },
-      review: { count: 0, rise: 8.5 },
-      completed: { count: 0, rise: 8.5 },
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing teamId in request body",
+      });
+    }
+
+    // Find the team member
+    const member = await teamModel.findById(teamId);
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Team member not found",
+      });
+    }
+
+    const articleStatus = {
+      underReview: "under review",
+      publish: "publish",
+      unpublish: "unpublish",
     };
 
-    // Default rise value
-    const riseValue = 8.5;
+    let counts = {};
 
-    // Process the aggregation result and assign to the count object
-    statusCounts.forEach((status) => {
-      if (status._id === articleStatus.pending) {
-        count.pending = { count: status.count, rise: riseValue };
-      } else if (status._id === articleStatus.inReview) {
-        count.review = { count: status.count, rise: riseValue };
-      } else if (status._id === articleStatus.completed) {
-        count.completed = { count: status.count, rise: riseValue };
-      }
-    });
+    if (member.role === "sudo") {
+      // For sudo users - get total articles, unassigned articles, and published articles
+      const [totalArticles, unassignedArticles, totalPublish] =
+        await Promise.all([
+          articleModel.countDocuments({}),
+          articleModel.countDocuments({ assignee: null }),
+          articleModel.countDocuments({ status: articleStatus.publish }),
+        ]);
 
-    // Send back the result as a JSON response
+      counts = {
+        total: totalArticles,
+        unassigned: unassignedArticles,
+        totalPublish: totalPublish,
+      };
+    } else {
+      // For team members - get counts of assigned articles by status
+      const statusAggregation = await articleModel.aggregate([
+        {
+          $match: {
+            assignee: member._id,
+            status: {
+              $in: [
+                articleStatus.underReview,
+                articleStatus.publish,
+                articleStatus.unpublish,
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+
+      // Initialize with 0 counts
+      counts = {
+        underReview: 0,
+        publish: 0,
+        unpublish: 0,
+      };
+
+      // Update counts based on aggregation results
+      statusAggregation.forEach((item) => {
+        if (item._id === articleStatus.inReview) {
+          counts.underReview = item.count;
+        } else if (item._id === articleStatus.publish) {
+          counts.publish = item.count;
+        } else if (item._id === articleStatus.unpublish) {
+          counts.unpublish = item.count;
+        }
+      });
+
+      // Get total assigned articles count
+      counts.totalAssigned = await articleModel.countDocuments({
+        assignee: member._id,
+      });
+    }
+
     return res.status(200).json({
-      message: "Success Fetching Article and Topic Stats",
-      data: count,
+      success: true,
+      message: "Dashboard counts fetched successfully",
+      data: counts,
+      role: member.role,
     });
   } catch (error) {
-    // Log the error and respond with a failure message
-    console.error("Error fetching article and topic counts:", error);
+    console.error("Error fetching article counts:", error);
     return res.status(500).json({
+      success: false,
       message: "Internal Server Error",
       error: error.message,
     });
@@ -70,46 +123,42 @@ export const handleGetAllCount = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
+    const { teamId, role } = req.body;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Get the total number of users using the faster estimatedDocumentCount
-    const totalUsers = await userModel.estimatedDocumentCount();
+    const usersWithArticles = await articleModel.distinct("userId");
 
-    // Fetch users based on page and limit using range-based pagination
-    let users;
-    if (page > 1) {
-      const lastUser = await userModel
-        .find()
-        .sort({ _id: -1 })
-        .skip((page - 1) * limit)
-        .limit(1);
-      if (lastUser.length > 0) {
-        const lastUserId = lastUser[0]._id;
-        users = await userModel.find({ _id: { $gt: lastUserId } }).limit(limit);
-      }
-    } else {
-      users = await userModel.find().limit(limit);
-    }
+    const totalUsers = await userModel.countDocuments({
+      _id: { $in: usersWithArticles },
+    });
 
-    if (users.length > 0) {
-      return res.status(200).json({
-        message: "Successful",
-        users,
-        pagination: {
-          totalUsers,
-          currentPage: page,
-          totalPages: Math.ceil(totalUsers / limit),
-          pageSize: limit,
-        },
-      });
-    }
+    // Fetch users with articles using pagination
+    const users = await userModel
+      .find({ _id: { $in: usersWithArticles } })
+      .select("-questionnaire")
+      .sort({ _id: 1 })
+      .skip(skip)
+      .limit(limit)
+      .exec();
 
-    throw new Error("No users found");
+    return res.status(200).json({
+      message: "Successful",
+      users,
+      pagination: {
+        totalUsers,
+        currentPage: page,
+        totalPages: Math.ceil(totalUsers / limit),
+        pageSize: limit,
+      },
+    });
   } catch (error) {
-    console.error(error); // Log the error for debugging
-    return res.status(500).json({ message: error.message });
+    console.error("Error fetching users with articles:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -117,20 +166,10 @@ export const getReviewCounts = async (req, res) => {
   try {
     const { userId } = req.query;
     // Get the count of articles with status "review"
-    const articlesInReview = await articleModel
-      .find({ userId })
-      .populate("topicId", "finalTopic");
-
-    // Get the count of topics with status "review"
-    const topicsInReview = await topicModel.find({
-      userId,
-    });
+    const articlesInReview = await articleModel.find({ userId });
 
     return res.status(200).json({
       message: "Counts fetched successfully",
-      count:
-        parseInt(articlesInReview.length) + parseInt(topicsInReview.length),
-      topics: topicsInReview,
       article: articlesInReview,
     });
   } catch (error) {
@@ -148,13 +187,10 @@ export const handleArticleMarkCompleted = async (req, res) => {
     // Find the article document by its ID
 
     // Handle case if article is not found
-    const article = await articleModel
-      .findById(articleId)
-      .populate("userId");
+    const article = await articleModel.findById(articleId).populate("userId");
     if (!article) {
       return res.status(404).json({ message: "Article not found" });
     }
-
 
     // Fetch user and topic in parallel (using article.userId and articleId)
     const [user, topic] = await Promise.all([
@@ -233,10 +269,10 @@ export const handleTopicMarkCompleted = async (req, res) => {
       message: "Topic is verified successfully",
     });
 
-    await sendTopicVerifySuccessfully(
-      topic.userId.email,
-      topic.topics[index].value
-    );
+    // await sendTopicVerifySuccessfully(
+    //   topic.userId.email,
+    //   topic.topics[index].value
+    // );
 
     return res.status(200).json({
       message: "Topic marked as completed",
@@ -473,15 +509,18 @@ export const handleSelectOutlet = async (req, res) => {
 // Create a new ticket
 export const createTicket = async (req, res) => {
   try {
-    const { userId, subject, subTopic = '' , description } = req.body;
+    const { userId, subject, subTopic = "", description } = req.body;
 
-    if (!userId || !subject ) {
-      return res
-        .status(400)
-        .json({ error: "userId and subject are required" });
+    if (!userId || !subject) {
+      return res.status(400).json({ error: "userId and subject are required" });
     }
 
-    const ticket = await ticketModel.create({ userId, subject, description , subTopic });
+    const ticket = await ticketModel.create({
+      userId,
+      subject,
+      description,
+      subTopic,
+    });
 
     res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {
@@ -564,6 +603,7 @@ export const postMessage = async (req, res) => {
     const { senderId, senderRole, text } = req.body;
 
     // 🚨 Validate required fields
+
     if (![ticketId, senderId, senderRole, text].every(Boolean)) {
       return res.status(400).json({
         error: "ticketId, senderId, senderRole, and text are required",
@@ -627,5 +667,503 @@ export const closeTicket = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to close ticket", details: err.message });
+  }
+};
+
+export const addNewTeamMember = async (req, res) => {
+  const { username , email , role } = req.body;
+
+  if (!username || !email || !role) {
+    return res.status(400).json({ message: "Username , email  and role are required" });
+  }
+
+  try {
+    const exists = await teamModel.findOne({ email });
+    if (exists)
+      return res.status(400).json({ message: "Team member already exists" });
+
+    const newMember = new teamModel({username , email , role });
+    await newMember.save();
+    sendWelcomeEmailToTeam(email)
+
+
+    res.status(201).json({ message: "Team member added", member: newMember });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error creating team member", error: err.message });
+  }
+};
+
+export const getTeamMembers = async (req, res) => {
+  try {
+    // First get all team members
+    const members = await teamModel.find({}, "username email role createdAt _id");
+    
+    const membersWithStats = await Promise.all(
+      members.map(async (member) => {
+        const totalAssigned = await articleModel.countDocuments({ 
+          assignee: member._id 
+        });
+        
+        const totalPublished = await articleModel.countDocuments({
+          assignee: member._id,
+          status: 'publish' // assuming you have a status field
+        });
+
+        return {
+          ...member.toObject(), // convert mongoose doc to plain object
+          totalAssigned,
+          totalPublished
+        };
+      })
+    );
+
+    res.status(200).json({ members: membersWithStats });
+  } catch (err) {
+    res.status(500).json({ 
+      message: "Error fetching team members", 
+      error: err.message 
+    });
+  }
+};
+
+export const assignTicket = async (req, res) => {
+  const { ticketId } = req.params;
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ message: "Username is required" });
+  }
+
+  try {
+    const assignee = await teamModel.findOne({ username });
+    if (!assignee) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    const ticket = await ticketModel.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    // Update current assignee
+    ticket.assignee = assignee._id;
+
+    // Add assignment to history
+    ticket.assignmentHistory.push({
+      assignedTo: assignee._id,
+      assignedBy: req.user?._id || null, // assumes requireSudo attaches req.user
+      assignedAt: new Date(),
+    });
+
+    await ticket.save();
+
+    res.status(200).json({
+      message: `Ticket assigned to ${username}`,
+      ticket,
+    });
+  } catch (err) {
+    console.error("Error assigning ticket:", err);
+    res.status(500).json({
+      message: "Error assigning ticket",
+      error: err.message,
+    });
+  }
+};
+
+export const getAssignedTickets = async (req, res) => {
+  const email = req.headers["internal-user-email"];
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!email) {
+    return res.status(400).json({ message: "Missing x-user-email header" });
+  }
+
+  try {
+    const member = await teamModel.findOne({ email: email.toLowerCase() });
+    if (!member) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    let query = {};
+    if (member.role === "team") {
+      query.assignee = member._id;
+    }
+
+    const totalTickets = await ticketModel.countDocuments(query);
+    const tickets = await ticketModel
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("userId", "email") // who created the ticket
+      .populate("assignee", "username email"); // who's assigned
+
+    res.status(200).json({
+      message:
+        member.role === "sudo"
+          ? "All tickets"
+          : `Tickets assigned to ${member.username}`,
+      total: totalTickets,
+      page,
+      pageSize: limit,
+      tickets,
+    });
+  } catch (err) {
+    console.error("Error fetching tickets:", err);
+    res.status(500).json({
+      message: "Failed to fetch tickets",
+      error: err.message,
+    });
+  }
+};
+
+export const ticketListUserWise = async (req, res) => {
+  try {
+    const tickets = await ticketModel
+      .find({ status: { $ne: "closed" } })
+      .sort({ createdAt: -1 });
+    // Get all unique user IDs from the tickets
+    const userIds = [
+      ...new Set(tickets.map((t) => t.userId?.toString()).filter(Boolean)),
+    ];
+
+    // Fetch all users in one query
+    const users = await userModel
+      .find({
+        _id: { $in: userIds },
+      })
+      .select("fullName email"); // Select only needed fields
+
+    // Create a map for quick user lookup
+    const userMap = new Map();
+    users.forEach((user) => {
+      userMap.set(user._id.toString(), {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+      });
+    });
+
+    // Group tickets by user
+    const resultMap = new Map();
+
+    // Initialize with found users
+    users.forEach((user) => {
+      const userIdStr = user._id.toString();
+      resultMap.set(userIdStr, {
+        userDetails: {
+          _id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+        },
+        ticketData: [],
+      });
+    });
+
+    // Assign tickets to users
+    tickets.forEach((ticket) => {
+      if (!ticket.userId) {
+        return;
+      }
+
+      const userIdStr = ticket.userId.toString();
+      const userGroup = resultMap.get(userIdStr);
+
+      if (userGroup) {
+        userGroup.ticketData.push({
+          _id: ticket._id,
+          subject: ticket.subject,
+          subTopic: ticket.subTopic,
+          description: ticket.description,
+          status: ticket.status,
+          ticketId: ticket.ticketId,
+          createdAt: ticket.createdAt,
+          updatedAt: ticket.updatedAt,
+        });
+      }
+    });
+
+    // Convert to array and filter out empty groups
+    const result = Array.from(resultMap.values()).filter(
+      (group) => group.ticketData.length > 0
+    );
+
+    return res.status(200).json({
+      message: "Tickets fetched successfully",
+      data: result,
+    });
+  } catch (err) {
+    console.error("listTickets error:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch tickets", details: err.message });
+  }
+};
+
+export const teamLogin = async (req, res) => {
+  const email = req.headers["internal-user-email"];
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ message: "Missing internal-user-email header" });
+  }
+
+  try {
+    const member = await teamModel.findOne({ email: email.toLowerCase() });
+
+    if (!member) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Not a team member" });
+    }
+
+    // Optional: You can return role/info if needed for frontend
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        id: member._id,
+        username: member.username,
+        email: member.email,
+        role: member.role,
+      },
+    });
+  } catch (error) {
+    console.error("Team login failed:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const assignArticle = async (req, res) => {
+  const { articleId } = req.params;
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ message: "Username is required" });
+  }
+
+  try {
+    const assignee = await teamModel.findOne({ username });
+    if (!assignee) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    const article = await articleModel.findById(articleId);
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+
+    // Update current assignee
+    article.assignee = assignee._id;
+
+    // Add assignment to history
+    article.assignmentHistory.push({
+      assignedTo: assignee._id,
+      assignedBy: req.user?._id || null, // assumes requireSudo attaches req.user
+      assignedAt: new Date(),
+    });
+
+    await article.save();
+
+    res.status(200).json({
+      message: `Article assigned to ${username}`,
+      article,
+    });
+  } catch (err) {
+    console.error("Error assigning article:", err);
+    res.status(500).json({
+      message: "Error assigning article",
+      error: err.message,
+    });
+  }
+};
+export const getAssignedArticles = async (req, res) => {
+  const email = req.headers["internal-user-email"];
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  if (!email) {
+    return res.status(400).json({ message: "Missing x-user-email header" });
+  }
+
+  try {
+    const member = await teamModel.findOne({ email: email.toLowerCase() });
+    if (!member) {
+      return res.status(404).json({ message: "Team member not found" });
+    }
+
+    let query = {};
+    if (member.role === "team") {
+      query.assignee = member._id;
+    }
+
+    const totalArticles = await articleModel.countDocuments(query);
+    const articles = await articleModel
+      .find(query)
+      .select("status userId assignee")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: "userId",
+        select: "email fullName phoneNumber gender role dateOfBirth profileImage",
+        populate: {
+          path: "profileImage",
+          select: "filepath",
+        },
+      });
+
+    return await res.status(200).json({
+      message:
+        member.role === "sudo"
+          ? "All Articles"
+          : `Articles assigned to ${member.username}`,
+      total: totalArticles,
+      page,
+      pageSize: limit,
+      articles,
+    });
+  } catch (err) {
+    console.error("Error fetching Articles:", err);
+    res.status(500).json({
+      message: "Failed to fetch Articles",
+      error: err.message,
+    });
+  }
+};
+
+export const handleAddCustomStatus = async (req, res) => {
+  const { status, articleId } = req.body;
+
+  if (!status || typeof status !== "string" || !articleId) {
+    return res
+      .status(400)
+      .json({ message: "Status and articleId are required" });
+  }
+  try {
+    const updatedArticle = await articleModel.findByIdAndUpdate(
+      articleId,
+      { $addToSet: { extraStatus: status } }, // use $addToSet to avoid duplicates
+      { new: true }
+    );
+
+    if (!updatedArticle) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    return res
+      .status(200)
+      .json({ message: "Status added", article: updatedArticle });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
+
+export const handleGetUnassignedArticles = async (req, res) => {
+  const page = parseInt(req.query.page) || 1; // Default to page 1
+  const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+  const skip = (page - 1) * limit;
+
+  try {
+    const totalUnassigned = await articleModel.countDocuments({ assignee: null });
+
+    const articles = await articleModel
+      .find({ assignee: null }) // Only unassigned articles
+      .select("status userId createdAt") // Include createdAt for reference
+      .sort({ createdAt: -1 }) // Latest first
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: "userId",
+        select: "fullName email"
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Unassigned articles fetched successfully",
+      data: {
+        articles : articles,
+        pagination: {
+          total: totalUnassigned,
+          page,
+          pageSize: limit,
+          totalPages: Math.ceil(totalUnassigned / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching unassigned articles:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch unassigned articles",
+      error: error.message
+    });
+  }
+};
+export const getUserDetails = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required"
+      });
+    }
+
+    const user = await userModel.findById(userId)
+      .select("fullName email gender phoneNumber profileImage dateOfBirth")
+      .populate({
+        path: "profileImage",
+        select: "filepath"
+      });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const [totalArticles, publishedArticles] = await Promise.all([
+      articleModel.countDocuments({ userId }),
+      articleModel.countDocuments({ 
+        userId, 
+        status: "publish" 
+      })
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          fullName: user.fullName,
+          dateOfBirth: user.dateOfBirth,
+          email: user.email,
+          gender: user.gender,
+          phoneNumber: user.phoneNumber,
+          profileImage: user.profileImage?.filepath || null
+        },
+        articleStats: {
+          total: totalArticles,
+          published: publishedArticles
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };

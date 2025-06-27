@@ -15,6 +15,11 @@ const articleSchema = new mongoose.Schema(
       default: "unpublish",
     },
 
+    extraStatus: {
+      type: [String],
+      default: [],
+    },
+    
     // Reference to a single Topic document (ObjectId or null)
     topics: {
       type: mongoose.Schema.Types.ObjectId,
@@ -27,6 +32,8 @@ const articleSchema = new mongoose.Schema(
       default: false,
     },
     updatedContent: { type: String, default: "" },
+    prevContent: { type: String, default: "" },
+
 
     // // Reference to the User document
     topicId: {
@@ -44,6 +51,21 @@ const articleSchema = new mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: "ArticleImage",
     },
+    // current assignee
+    assignee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
+      default: null,
+    },
+
+    // assignment history
+    assignmentHistory: [
+      {
+        assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
+        assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
+        assignedAt: { type: Date, default: Date.now },
+      },
+    ],
     metaData: {
       termsAndCondition: { type: Boolean, default: false },
       companyName: { type: Boolean, default: false },

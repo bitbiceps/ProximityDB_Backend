@@ -227,31 +227,37 @@ export const handleArticleContentUpdate = async (req, res) => {
   }
 
   try {
-    const article = await articleModel.findByIdAndUpdate(
+    const currentArticle = await articleModel.findById(articleId);
+    
+    if (!currentArticle) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    const updatedArticle = await articleModel.findByIdAndUpdate(
       articleId,
-      { updateRequested: false, updatedContent: "", value: content },
+      { 
+        updateRequested: false,
+        prevContent: currentArticle.value,
+        value: content
+      },
       { new: true }
     );
 
-    if (!article) {
-      return res.status(404).json({ message: "Article not found" });
-    }
 
     const newMessage = await MessageModel.create({
-      userId: article?.userId,
+      userId: currentArticle?.userId,
       messageType: "article_update",
       articleId,
       content: "Article is updated successfully",
     });
 
     sendNotification({
-      userId: article?.userId,
+      userId: currentArticle?.userId,
       message: "Article Updated succesfully",
     });
 
     return res.status(200).json({
       message: "Article content updated successfully",
-      article,
+      article: updatedArticle,
     });
   } catch (error) {
     console.error("Error updating article:", error);
@@ -427,7 +433,11 @@ export const handleGetArticlesById = async (req, res) => {
     // Find all articles associated with the userId
     const article = await articleModel
       .findById(articleId)
-      .populate("profileImage");
+      .populate("profileImage") 
+      .populate({
+        path: "userId",
+        select: "email fullName",
+      });
 
     if (!article) {
       return res
@@ -487,6 +497,15 @@ export const determineBestOutletsForArticle = async (req, res) => {
       return res.status(404).json({ message: "Article not found" });
     }
 
+  if (article.metaData?.outlets && article.metaData.outlets.length > 0) {
+      return res.status(200).json({
+        message: "Best outlets already determined",
+        articleId: article._id,
+        bestOutlets: article.metaData.outlets,
+      });
+    }
+
+
     const bestOutlets = await determineBestOutlets(article.value);
 
     article = await articleModel.findByIdAndUpdate(
@@ -511,6 +530,18 @@ export const determineBestOutletsForArticle = async (req, res) => {
 
 export const handleGenerateArticle = async (req, res) => {
   const { userId, topic } = req.body;
+    const existingArticles = await articleModel.find({
+      userId,
+      status: { $ne: 'publish' } 
+    });
+
+    if (existingArticles.length > 0) {
+      return res.status(400).json({
+        message: "Cannot generate new article. You already have an active (unpublished) article.",
+        existingArticleId: existingArticles[0]._id
+      });
+    }
+
 
   try {
     const user = await userModel.findById(userId).select({
@@ -684,37 +715,43 @@ export const handleCreateArticlesSecond = async (req, res) => {
   const { topicId, userId } = req.body;
 
   try {
-    // Step 1: Find topic document where nested topics array contains the topicId
-    const topicDoc = await topicModel.findOne({ "topics._id": topicId });
+    // const topicDoc = await topicModel.findOne({ "topics._id": topicId });
+    const topicDoc = await topicModel.findById(topicId);
 
     if (!topicDoc) {
       return res.status(404).json({ message: "Topic document not found" });
     }
 
     // Step 2: Find the actual topic object inside the array
-    const matchedTopic = topicDoc.topics.find(
-      (topic) => topic._id.toString() === topicId
-    );
+    // const matchedTopic = topicDoc.topics.find(
+    //   (topic) => topic._id.toString() === topicId
+    // );
 
-    if (!matchedTopic) {
+    // if (!matchedTopic) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "No matching topic found in array" });
+    // }
+
+    if (!topicDoc.finalTopic) {
       return res
         .status(400)
-        .json({ message: "No matching topic found in array" });
+        .json({ message: "Please get your topics verified" });
     }
 
-    // Step 3: Set finalTopic = matchedTopic.value
-    topicDoc.finalTopic = matchedTopic.value;
-    topicDoc.status = articleStatus.completed;
-    await topicDoc.save();
+    // // Step 3: Set finalTopic = matchedTopic.value
+    // topicDoc.finalTopic = matchedTopic.value;
+    // topicDoc.status = articleStatus.completed;
+    // await topicDoc.save();
 
-    // // Step 4: Check if article already exists
-    // const existingArticle = await articleModel
-    //   .findOne({ topicId: topicDoc._id.toString() })
-    //   .populate("profileImage topicId");
+    // Step 4: Check if article already exists
+    const existingArticle = await articleModel
+      .findOne({ topicId: topicDoc._id.toString() })
+      .populate("profileImage topicId");
 
-    // if (existingArticle && existingArticle?.value !== "") {
-    //   return res.status(200).json(existingArticle);
-    // }
+    if (existingArticle && existingArticle?.value !== "") {
+      return res.status(200).json(existingArticle);
+    }
 
     // Step 5: Get user details
     const user = await userModel
@@ -869,8 +906,8 @@ ${questions
       value: finalArticle,
       topicId: topicDoc._id,
       userId,
-      selectedTopic: matchedTopic.value,
-      fileName: matchedTopic.value,
+      selectedTopic: topicDoc.finalTopic,
+      fileName: topicDoc.finalTopic,
     });
 
     // Step 10: Link articleId back to topicDoc
@@ -892,16 +929,14 @@ ${questions
 };
 
 export const handleArticlePublishRequest = async (req, res) => {
-  const { articleId } = req.body;
-
+  const { articleId , status } = req.body;
   if (!articleId) {
     return res.status(400).json({ message: "articleId are required" });
   }
-
   try {
     const article = await articleModel.findByIdAndUpdate(
       articleId,
-      { status: "under review" },
+      { status: status },
       { new: true }
     );
 
@@ -936,8 +971,7 @@ export const handleArticleRegenerate = async (req, res) => {
     }
 
     // Find the existing article
-    const existingArticle = await articleModel
-      .findById(articleId)
+    const existingArticle = await articleModel.findById(articleId);
 
     if (!existingArticle) {
       return res.status(404).json({ message: "Article not found" });
@@ -963,15 +997,16 @@ ${existingArticle.value}
       messages: [
         {
           role: "system",
-          content: "You are a professional editor that improves articles while preserving their core content."
+          content:
+            "You are a professional editor that improves articles while preserving their core content.",
         },
         {
           role: "user",
           content: regenerationPrompt,
         },
       ],
-      max_tokens: 1500,  // Slightly higher to allow for improvements
-      temperature: 0.5,  // Lower temperature for more conservative rewrites
+      max_tokens: 1500, // Slightly higher to allow for improvements
+      temperature: 0.5, // Lower temperature for more conservative rewrites
     });
 
     const regeneratedArticle = response.choices[0].message.content.trim();
@@ -988,3 +1023,26 @@ ${existingArticle.value}
     });
   }
 };
+
+export const handleGetActiveArticles = async (req, res) => {
+  try {
+    const { id: userId } = req.params;
+
+    const articles = await articleModel
+      .find({ 
+        status: { $ne: "publish" }, 
+        userId: userId 
+      })
+      .populate("profileImage topicId");
+
+    if (!articles.length) {
+          return res.status(200).json({ message: "Success", activeArticles: 0 });
+    }
+
+    return res.status(200).json({ message: "Success", activeArticles: articles.length });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "An error occurred", error: error.message });
+  }
+};
+
