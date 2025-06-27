@@ -46,17 +46,21 @@ export const handleGetAllCount = async (req, res) => {
 
     if (member.role === "sudo") {
       // For sudo users - get total articles, unassigned articles, and published articles
-      const [totalArticles, unassignedArticles, totalPublish] =
+      const [totalArticles, unassignedArticles, totalPublish , totalUnderReview, totalUnpublished] =
         await Promise.all([
           articleModel.countDocuments({}),
           articleModel.countDocuments({ assignee: null }),
           articleModel.countDocuments({ status: articleStatus.publish }),
+          articleModel.countDocuments({ status: articleStatus.underReview }),
+          articleModel.countDocuments({ status: articleStatus.unpublish }),
         ]);
 
       counts = {
         total: totalArticles,
         unassigned: unassignedArticles,
         totalPublish: totalPublish,
+        underReview: totalUnderReview,
+        unpublished: totalUnpublished,
       };
     } else {
       // For team members - get counts of assigned articles by status
@@ -671,10 +675,12 @@ export const closeTicket = async (req, res) => {
 };
 
 export const addNewTeamMember = async (req, res) => {
-  const { username , email , role } = req.body;
+  const { username, email, role } = req.body;
 
   if (!username || !email || !role) {
-    return res.status(400).json({ message: "Username , email  and role are required" });
+    return res
+      .status(400)
+      .json({ message: "Username , email  and role are required" });
   }
 
   try {
@@ -682,10 +688,9 @@ export const addNewTeamMember = async (req, res) => {
     if (exists)
       return res.status(400).json({ message: "Team member already exists" });
 
-    const newMember = new teamModel({username , email , role });
+    const newMember = new teamModel({ username, email, role });
     await newMember.save();
-    sendWelcomeEmailToTeam(email)
-
+    sendWelcomeEmailToTeam(email);
 
     res.status(201).json({ message: "Team member added", member: newMember });
   } catch (err) {
@@ -698,32 +703,35 @@ export const addNewTeamMember = async (req, res) => {
 export const getTeamMembers = async (req, res) => {
   try {
     // First get all team members
-    const members = await teamModel.find({}, "username email role createdAt _id");
-    
+    const members = await teamModel.find(
+      {},
+      "username email role createdAt _id"
+    );
+
     const membersWithStats = await Promise.all(
       members.map(async (member) => {
-        const totalAssigned = await articleModel.countDocuments({ 
-          assignee: member._id 
+        const totalAssigned = await articleModel.countDocuments({
+          assignee: member._id,
         });
-        
+
         const totalPublished = await articleModel.countDocuments({
           assignee: member._id,
-          status: 'publish' // assuming you have a status field
+          status: "publish", // assuming you have a status field
         });
 
         return {
           ...member.toObject(), // convert mongoose doc to plain object
           totalAssigned,
-          totalPublished
+          totalPublished,
         };
       })
     );
 
     res.status(200).json({ members: membersWithStats });
   } catch (err) {
-    res.status(500).json({ 
-      message: "Error fetching team members", 
-      error: err.message 
+    res.status(500).json({
+      message: "Error fetching team members",
+      error: err.message,
     });
   }
 };
@@ -1011,7 +1019,8 @@ export const getAssignedArticles = async (req, res) => {
       .limit(limit)
       .populate({
         path: "userId",
-        select: "email fullName phoneNumber gender role dateOfBirth profileImage",
+        select:
+          "email fullName phoneNumber gender role dateOfBirth profileImage",
         populate: {
           path: "profileImage",
           select: "filepath",
@@ -1065,14 +1074,15 @@ export const handleAddCustomStatus = async (req, res) => {
   }
 };
 
-
 export const handleGetUnassignedArticles = async (req, res) => {
   const page = parseInt(req.query.page) || 1; // Default to page 1
   const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
   const skip = (page - 1) * limit;
 
   try {
-    const totalUnassigned = await articleModel.countDocuments({ assignee: null });
+    const totalUnassigned = await articleModel.countDocuments({
+      assignee: null,
+    });
 
     const articles = await articleModel
       .find({ assignee: null }) // Only unassigned articles
@@ -1082,28 +1092,28 @@ export const handleGetUnassignedArticles = async (req, res) => {
       .limit(limit)
       .populate({
         path: "userId",
-        select: "fullName email"
+        select: "fullName email",
       });
 
     return res.status(200).json({
       success: true,
       message: "Unassigned articles fetched successfully",
       data: {
-        articles : articles,
+        articles: articles,
         pagination: {
           total: totalUnassigned,
           page,
           pageSize: limit,
-          totalPages: Math.ceil(totalUnassigned / limit)
-        }
-      }
+          totalPages: Math.ceil(totalUnassigned / limit),
+        },
+      },
     });
   } catch (error) {
     console.error("Error fetching unassigned articles:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch unassigned articles",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -1114,30 +1124,31 @@ export const getUserDetails = async (req, res) => {
     if (!userId) {
       return res.status(400).json({
         success: false,
-        message: "User ID is required"
+        message: "User ID is required",
       });
     }
 
-    const user = await userModel.findById(userId)
+    const user = await userModel
+      .findById(userId)
       .select("fullName email gender phoneNumber profileImage dateOfBirth")
       .populate({
         path: "profileImage",
-        select: "filepath"
+        select: "filepath",
       });
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
 
     const [totalArticles, publishedArticles] = await Promise.all([
       articleModel.countDocuments({ userId }),
-      articleModel.countDocuments({ 
-        userId, 
-        status: "publish" 
-      })
+      articleModel.countDocuments({
+        userId,
+        status: "publish",
+      }),
     ]);
 
     return res.status(200).json({
@@ -1149,30 +1160,30 @@ export const getUserDetails = async (req, res) => {
           email: user.email,
           gender: user.gender,
           phoneNumber: user.phoneNumber,
-          profileImage: user.profileImage?.filepath || null
+          profileImage: user.profileImage?.filepath || null,
         },
         articleStats: {
           total: totalArticles,
-          published: publishedArticles
-        }
-      }
+          published: publishedArticles,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching user details:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-
 export const handleAddOutlet = async (req, res) => {
-  const {outletName , articleId} = req.body;
+  const { outletName, articleId } = req.body;
   if (!outletName || !articleId) {
-    return res.status(400).json({ message: "Outlet name and article ID are required" });
+    return res
+      .status(400)
+      .json({ message: "Outlet name and article ID are required" });
   }
   try {
     const article = await articleModel.findById(articleId);
@@ -1180,14 +1191,18 @@ export const handleAddOutlet = async (req, res) => {
       return res.status(404).json({ message: "Article not found" });
     }
     const newOutlet = {
-      Outlets_Name : outletName
-    }
+      Outlets_Name: outletName,
+    };
 
     article.metaData.outlets.push(newOutlet);
     await article.save();
 
-    return res.status(200).json({ message: "Outlet added successfully", article });
+    return res
+      .status(200)
+      .json({ message: "Outlet added successfully", article });
   } catch (error) {
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
-}
+};
