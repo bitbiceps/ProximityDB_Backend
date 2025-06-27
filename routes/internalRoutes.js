@@ -49,12 +49,6 @@ internalRouter.get("/tickets/:ticketId/messages", getMessages); // Get messages 
 internalRouter.post("/tickets/:ticketId/messages", postMessage); // Post message on a ticket
 internalRouter.patch("/tickets/:ticketId/close", closeTicket); // Post message on a ticket
 
-// tickets
-internalRouter.post("/team/add", requireSudo, addNewTeamMember);
-internalRouter.get("/team/members", requireSudo, getTeamMembers);
-// assigned tickets
-internalRouter.post("/tickets/:ticketId/assign", requireSudo, assignTicket);
-internalRouter.post("/article/:articleId/assign", requireSudo, assignArticle);
 
 // get assigned tickets to a user
 
@@ -62,5 +56,15 @@ internalRouter.get("/team/get-tickets", getAssignedTickets);
 //
 internalRouter.get("/team/get-articles", getAssignedArticles);
 internalRouter.get("/team/login", teamLogin);
+
+// tickets
+
+// internalRouter.use(requireSudo)
+internalRouter.post("/team/add", addNewTeamMember);
+internalRouter.get("/team/members", getTeamMembers);
+// assigned tickets
+internalRouter.post("/tickets/:ticketId/assign", assignTicket);
+internalRouter.post("/article/:articleId/assign", assignArticle);
+
 
 export default internalRouter;

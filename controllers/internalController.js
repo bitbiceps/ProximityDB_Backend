@@ -9,6 +9,7 @@ import { sendNotification } from "../server.js";
 import {
   sendTopicVerifySuccessfully,
   sendArticleVerifySuccesfullly,
+  sendWelcomeEmailToTeam,
 } from "../helpers/mailer.js";
 import MessageModel from "../models/messageModal.js";
 import teamMessageModel from "../models/teamMessageModel.js";
@@ -632,7 +633,9 @@ export const closeTicket = async (req, res) => {
 };
 
 export const addNewTeamMember = async (req, res) => {
+
   const { email, role } = req.body;
+
 
   if (!email || !role) {
     return res.status(400).json({ message: "Email and role are required" });
@@ -645,6 +648,8 @@ export const addNewTeamMember = async (req, res) => {
 
     const newMember = new teamModel({ email, role });
     await newMember.save();
+    sendWelcomeEmailToTeam(email)
+
 
     res.status(201).json({ message: "Team member added", member: newMember });
   } catch (err) {
