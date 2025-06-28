@@ -15,7 +15,8 @@ import {
   handleArticleDelete,
   handleArticleStatusUpdate,
   handleArticleRegenerate,
-  handleGetActiveArticles
+  handleGetActiveArticles,
+  getUserArticleStats
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
@@ -37,6 +38,8 @@ articleRouter.delete("/delete/:articleId", handleArticleDelete);
 articleRouter.post("/update-status",handleArticleStatusUpdate);
 articleRouter.post("/regenerate",handleArticleRegenerate);
 articleRouter.get("/active-articles/:id", handleGetActiveArticles);
+articleRouter.get("/stats/:userId", getUserArticleStats);
+
 
 
 

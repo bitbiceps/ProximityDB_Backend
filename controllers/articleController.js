@@ -6,6 +6,7 @@ import { articleStatus, determineBestOutlets } from "../helpers/utils.js";
 import io from "../server.js";
 import { sendNotification } from "../server.js";
 import MessageModel from "../models/messageModal.js";
+import mongoose from "mongoose";
 
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
@@ -1028,21 +1029,109 @@ export const handleGetActiveArticles = async (req, res) => {
   try {
     const { id: userId } = req.params;
 
-    const articles = await articleModel
-      .find({ 
-        status: { $ne: "publish" }, 
-        userId: userId 
-      })
-      .populate("profileImage topicId");
+    const user = await userModel.findById(userId);
+    const articleAllowance = user?.articleCount || 0;
 
-    if (!articles.length) {
-          return res.status(200).json({ message: "Success", activeArticles: 0 });
-    }
+    const activeArticles = await articleModel.countDocuments({ 
+      status: { $ne: "publish" }, 
+      userId: userId 
+    });
 
-    return res.status(200).json({ message: "Success", activeArticles: articles.length });
+    const totalArticlesCreated = await articleModel.countDocuments({ 
+      userId: userId 
+    });
+
+
+    const remainingArticles = Math.max(0, articleAllowance - totalArticlesCreated);
+
+    return res.status(200).json({ 
+      message: "Success", 
+      activeArticles,
+      articleAllowance,
+      remainingArticles 
+    });
+
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "An error occurred", error: error.message });
+    return res.status(500).json({ 
+      message: "An error occurred", 
+      error: error.message 
+    });
   }
 };
 
+
+
+export const getUserArticleStats = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const monthlyData = await articleModel.aggregate([
+      {
+        $match: {
+          userId: userObjectId,
+          status: 'publish'
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } },
+      { 
+        $project: {
+          day: "$_id",
+          articles: "$count",
+          _id: 0
+        }
+      }
+    ]);
+
+    // Get article status counts
+    const statusCounts = await articleModel.aggregate([
+      {
+        $match: {
+          userId: userObjectId
+        }
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          name: "$_id",
+          value: "$count",
+          _id: 0
+        }
+      }
+    ]);
+
+    // Default data if no articles exist
+    const defaultLineData = Array.from({ length: 30 }, (_, i) => ({
+      day: `${i+1}`,
+      articles: 0
+    }));
+
+    const defaultPieData = [
+      { name: "Publish", value: 0 },
+      { name: "Under Review", value: 0 },
+      { name: "Unpublish", value: 0 }
+    ];
+
+    res.status(200).json({
+      lineData: monthlyData.length ? monthlyData : defaultLineData,
+      pieData: statusCounts.length ? statusCounts : defaultPieData,
+      totalArticles: statusCounts.reduce((sum, item) => sum + item.value, 0)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching article stats", error });
+  }
+};

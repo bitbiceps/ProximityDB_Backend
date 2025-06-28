@@ -47,7 +47,7 @@ app.use(cors({origin: process.env.NODE_ENV === "production"
       : true ,
      credentials: true }));
 
-app.use("/webhooks", express.raw({ type: "application/json" }), webhookRouter);
+app.use("/webhooks", webhookRouter);
 app.use("/pay", express.json(), paymentRoutes);
 app.use("/auth", express.json(), authRoutes);
 app.use("/article", express.json(), articleRouter);

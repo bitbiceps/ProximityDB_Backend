@@ -496,3 +496,58 @@ export const handleLogout = async (req, res) => {
     });
   }
 };
+
+
+
+export const setPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: "Token is required" });
+    }
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(400).json({ 
+        message: "Invalid or expired token", 
+        error: error.message 
+      });
+    }
+
+    const user = await userModel.findOne({ email: decoded.email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.password) {
+      return res.status(400).json({ 
+        message: "Password already set for this account" 
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassword;
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json({
+      message: "Password set successfully",
+      userId: user._id,
+    });
+
+  } catch (error) {
+    console.error("Error setting password:", error);
+    res.status(500).json({ 
+      message: "Error setting password", 
+      error: error.message 
+    });
+  }
+};

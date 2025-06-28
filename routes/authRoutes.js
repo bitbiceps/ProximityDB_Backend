@@ -10,7 +10,8 @@ import {
   changePassword,
   handleGoogleLogin,
   handleLinkedInLogin,
-  handleLogout
+  handleLogout,
+  setPassword
 } from "../controllers/authController.js";
 import {
   validateRegistration,
@@ -30,6 +31,7 @@ router.post("/reset-password", handleResetPassword);
 router.post("/verify-otp", handleVerifyOtp);
 router.post("/change-password", changePassword);
 router.get('/logout',handleLogout)
+router.post('/set-password/:token', setPassword)
 
 // Google OAuth start
 router.get(
