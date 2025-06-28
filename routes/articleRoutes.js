@@ -18,7 +18,7 @@ import {
   getArticleStatusGraphData
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
-import requireSudo from "../middleware/internalMiddlewares.js";
+// import requireSudo from "../middleware/internalMiddlewares.js";
 
 const articleRouter = Router();
 
