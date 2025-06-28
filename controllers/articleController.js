@@ -109,15 +109,14 @@ export const handleCreateArticles = async (req, res) => {
         user.questionnaire.industryContextAndInsights[2]?.answer,
         user.questionnaire.industryContextAndInsights[3]?.answer,
       ].filter((answer) => answer.length > 4);
-      const promptContent = `You are an AI article writer. Please generate a well-structured and insightful article for the user based on the following questionnaire answers. The article should be professional, informative, and engaging, reflecting the user's expertise and practical experience in the topic of: "${
-        article.finalTopic
-      }".
+      const promptContent = `You are an AI article writer. Please generate a well-structured and insightful article for the user based on the following questionnaire answers. The article should be professional, informative, and engaging, reflecting the user's expertise and practical experience in the topic of: "${article.finalTopic
+        }".
 
       Here are the user's answers to the questionnaire:
       
       ${questions
-        .map((answer, index) => `- **Question-${index + 1}:** ${answer}`)
-        .join("\n")}
+          .map((answer, index) => `- **Question-${index + 1}:** ${answer}`)
+          .join("\n")}
       
       The article should include:
       1. **A well-organized structure**: Divide the content into logical sections such as an introduction, core insights, challenges, solutions, and a conclusion. Ensure each section flows naturally into the next for better readability.
@@ -126,9 +125,8 @@ export const handleCreateArticles = async (req, res) => {
       4. **No HTML tags**: Keep the content free of HTML tags, focusing purely on textual content that’s easily readable.
       5. **Professional and knowledgeable tone**: Write in a manner that reflects the user’s expertise and thought leadership in the field. The tone should be authoritative yet accessible.
       6. **Highlight user expertise**: Throughout the article, emphasize the insights, knowledge, and experience shared by the user. This should reflect the user’s in-depth understanding of the subject.
-      7. **Core aspects of the topic**: Ensure the article addresses the main points of the topic, diving into key trends, challenges, or solutions related to **${
-        article.finalTopic
-      }**.
+      7. **Core aspects of the topic**: Ensure the article addresses the main points of the topic, diving into key trends, challenges, or solutions related to **${article.finalTopic
+        }**.
       8. **Actionable takeaways and conclusion**: End the article with a concise summary of key insights. Provide actionable takeaways or recommendations that will add value for the reader, enabling them to apply the knowledge gained.
       
       The article should be informative, engaging, and provide valuable insights for the audience, ensuring that the user's perspective shines through as an expert on the topic.`;
@@ -655,19 +653,17 @@ export const handleGenerateArticle = async (req, res) => {
         **User Information:**  
         - Name: ${userPlaceholder}  
         - Role: ${user.questionnaire.basicInformation[2].answer}  
-        - Company/Organization: ${
-          user.questionnaire.basicInformation[3].answer
-        }  
+        - Company/Organization: ${user.questionnaire.basicInformation[3].answer
+      }  
 
         **User Responses:**  
         ${questions
-          .map(
-            (item, index) =>
-              `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${
-                item.answer
-              }`
-          )
-          .join("\n\n")}
+        .map(
+          (item, index) =>
+            `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${item.answer
+            }`
+        )
+        .join("\n\n")}
       `;
 
     const response = await openAi.writer.chat.completions.create({
@@ -852,9 +848,8 @@ export const handleCreateArticlesSecond = async (req, res) => {
     // Step 7: Generate prompt content
     const promptContent = `
 **Objective:**  
-Write a professional, engaging, and insightful article about the topic: **${
-      topicDoc.finalTopic
-    }** and do not include the article title at the start of the article.  
+Write a professional, engaging, and insightful article about the topic: **${topicDoc.finalTopic
+      }** and do not include the article title at the start of the article.  
 The article must strictly include the user's answers and refer to them naturally throughout the content.  
 Maintain a balance of **60% topic focus and 40% user focus**.  
 Write in the **third person**, referring to the user by their name (${userPlaceholder}). Do not use "I" or "me."
@@ -874,13 +869,12 @@ Write in the **third person**, referring to the user by their name (${userPlaceh
 
 **User Responses:**  
 ${questions
-  .map(
-    (item, index) =>
-      `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${
-        item.answer
-      }`
-  )
-  .join("\n\n")}
+        .map(
+          (item, index) =>
+            `- **Question-${index + 1}:** ${item.question}\n  **Answer:** ${item.answer
+            }`
+        )
+        .join("\n\n")}
 `;
 
     // Step 8: Call OpenAI to generate article
@@ -1133,5 +1127,67 @@ export const getUserArticleStats = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching article stats", error });
+  }
+};
+export const getArticleStatusGraphData = async (req, res) => {
+  try {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 29); // Include today
+
+    // Start by grouping articles by date and status
+    const result = await articleModel.aggregate([
+      {
+        $match: {
+          status: { $in: ["publish", "unpublish"] },
+          createdAt: { $gte: new Date(thirtyDaysAgo.setHours(0, 0, 0, 0)) },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            date: {
+              $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            },
+            status: "$status",
+          },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Init empty map with all dates for both statuses
+    const chartDataMap = {};
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const key = date.toISOString().split("T")[0];
+      chartDataMap[key] = { date: key, publish: 0, unpublish: 0 };
+    }
+
+    // Fill counts from aggregation
+    result.forEach((item) => {
+      const date = item._id.date;
+      const status = item._id.status;
+      if (chartDataMap[date]) {
+        chartDataMap[date][status] = item.count;
+      }
+    });
+
+    // Return array sorted by date ascending
+    const finalData = Object.values(chartDataMap).sort((a, b) =>
+      a.date.localeCompare(b.date)
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: finalData,
+    });
+  } catch (error) {
+    console.error("Line chart error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while generating graph data.",
+    });
   }
 };
