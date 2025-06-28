@@ -43,7 +43,7 @@ export const verifyToken = async (req, res, next) => {
       const user = await userModel.findById(decoded.userId)
         .populate("topics profileImage")
         .lean();
-      
+
       if (!user) {
         throw new Error("User not found");
       }
@@ -100,7 +100,7 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
-const clearAuthCookies = (res) =>  {
+const clearAuthCookies = (res) => {
   res.clearCookie('accessToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

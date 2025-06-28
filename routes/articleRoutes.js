@@ -4,7 +4,7 @@ import {
   handleGetArticles,
   handleQuestionnaire,
   handleSubmitArticle,
-  handleCreateArticles,
+  // handleCreateArticles,
   handleGetApprovedTopics,
   handleGetArticlesById,
   determineBestOutletsForArticle,
@@ -14,7 +14,8 @@ import {
   handleArticleFileNameUpdate,
   handleArticleDelete,
   handleArticlePublishRequest,
-  handleArticleRegenerate
+  handleArticleRegenerate,
+  getArticleStatusGraphData
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
@@ -25,16 +26,17 @@ articleRouter.get("/", handleGetArticles);
 articleRouter.post("/create-article", handleCreateArticlesSecond);
 articleRouter.post("/submit-questionnaire", handleQuestionnaire);
 articleRouter.put("/request-update", handleArticleUpdateRequested);
-articleRouter.put("/update" , handleArticleContentUpdate);
-articleRouter.put("/update-filename",handleArticleFileNameUpdate)
+articleRouter.put("/update", handleArticleContentUpdate);
+articleRouter.put("/update-filename", handleArticleFileNameUpdate)
 articleRouter.put("/submit", handleSubmitArticle);
 articleRouter.post("/fetch-approvedtopics", handleGetApprovedTopics);
 articleRouter.post("/get", handleGetArticlesById);
-articleRouter.post("/article-outlet",determineBestOutletsForArticle)
-articleRouter.post("/generate-article",handleGenerateArticle);
+articleRouter.post("/article-outlet", determineBestOutletsForArticle)
+articleRouter.post("/generate-article", handleGenerateArticle);
 articleRouter.delete("/delete/:articleId", handleArticleDelete);
-articleRouter.post("/publish-request",handleArticlePublishRequest);
-articleRouter.post("/regenerate",handleArticleRegenerate);
+articleRouter.post("/publish-request", handleArticlePublishRequest);
+articleRouter.post("/regenerate", handleArticleRegenerate);
+articleRouter.get("/line-graph", getArticleStatusGraphData)
 
 
 
