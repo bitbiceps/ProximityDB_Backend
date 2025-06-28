@@ -40,7 +40,6 @@ articleRouter.post("/update-status",handleArticleStatusUpdate);
 articleRouter.post("/regenerate",handleArticleRegenerate);
 articleRouter.get("/active-articles/:id", handleGetActiveArticles);
 articleRouter.get("/stats/:userId", getUserArticleStats);
-articleRouter.post("/regenerate", handleArticleRegenerate);
 articleRouter.get("/line-graph", getArticleStatusGraphData)
 
 
