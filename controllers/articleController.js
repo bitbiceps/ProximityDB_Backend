@@ -7,6 +7,7 @@ import io from "../server.js";
 import { sendNotification } from "../server.js";
 import MessageModel from "../models/messageModal.js";
 import mongoose from "mongoose";
+import teamModel from "../models/teamModel.js";
 
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
@@ -1141,17 +1142,37 @@ export const getUserArticleStats = async (req, res) => {
 
 export const getArticleStatusGraphData = async (req, res) => {
   try {
+    const { teamId } = req.params;
+    
+    const team = await teamModel.findById(teamId).select('role');
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(teamId);
+
+
     const today = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(today.getDate() - 29); // Include today
 
+    // Base match conditions
+    const matchConditions = {
+      status: { $in: ["publish", "unpublish"] },
+      createdAt: { $gte: new Date(thirtyDaysAgo.setHours(0, 0, 0, 0)) },
+    };
+
+    if (team.role === 'team') {
+      matchConditions.assignee = userObjectId;
+    }
+
     // Start by grouping articles by date and status
     const result = await articleModel.aggregate([
       {
-        $match: {
-          status: { $in: ["publish", "unpublish"] },
-          createdAt: { $gte: new Date(thirtyDaysAgo.setHours(0, 0, 0, 0)) },
-        },
+        $match: matchConditions,
       },
       {
         $group: {
@@ -1165,6 +1186,7 @@ export const getArticleStatusGraphData = async (req, res) => {
         },
       },
     ]);
+
 
     // Init empty map with all dates for both statuses
     const chartDataMap = {};
