@@ -522,19 +522,33 @@ export const createTicket = async (req, res) => {
       return res.status(400).json({ error: "userId and subject are required" });
     }
 
+    // Check existing open/pending tickets count
+    const openTicketsCount = await ticketModel.countDocuments({
+      userId,
+      status: { $in: ["open", "pending"] }
+    });
+
+    if (openTicketsCount >= 3) {
+      return res.status(400).json({
+        message: "You already have 3 open or pending tickets. Please close some before creating new ones."
+      });
+    }
+
     const ticket = await ticketModel.create({
       userId,
       subject,
       description,
       subTopic,
+      status: "open" // Set default status
     });
 
     res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {
     console.error("createTicket error:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to create ticket", details: err.message });
+    res.status(500).json({ 
+      message: "Failed to create ticket", 
+      details: err.message 
+    });
   }
 };
 
@@ -569,8 +583,8 @@ export const listTickets = async (req, res) => {
 
     const tickets =
       isTeam === "true"
-        ? await ticketModel.find().sort({ createdAt: -1 })
-        : await ticketModel.find({ userId });
+        ? await ticketModel.find().sort({ updtedAt: -1 })
+        : await ticketModel.find({ userId }).sort({updatedAt : -1});
 
     res.status(200).json(tickets);
   } catch (err) {
