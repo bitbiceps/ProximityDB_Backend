@@ -1055,35 +1055,49 @@ export const handleGetActiveArticles = async (req, res) => {
 };
 
 
-
 export const getUserArticleStats = async (req, res) => {
   try {
     const { userId } = req.params;
     
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const monthlyData = await articleModel.aggregate([
+    // Get daily published article counts
+    const dailyData = await articleModel.aggregate([
       {
         $match: {
           userId: userObjectId,
-          status: 'publish'
+          status: 'publish',
+          createdAt: {
+            $gte: new Date(new Date().setDate(1)), // First day of current month
+            $lt: new Date(new Date().setMonth(new Date().getMonth() + 1)) // First day of next month
+          }
         }
       },
       {
         $group: {
-          _id: { $dateToString: { format: "%d", date: "$createdAt" } },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           count: { $sum: 1 }
         }
       },
-      { $sort: { "_id": 1 } },
-      { 
-        $project: {
-          day: "$_id",
-          articles: "$count",
-          _id: 0
-        }
-      }
+      { $sort: { "_id": 1 } }
     ]);
+
+    // Create a map of days with article counts
+    const dayCountMap = {};
+    dailyData.forEach(item => {
+      const day = new Date(item._id).getDate();
+      dayCountMap[day] = item.count;
+    });
+
+    // Generate complete month data with zeros for missing days
+    const daysInMonth = 30; // Assuming we want to show 30 days
+    const completeLineData = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      return {
+        day: day.toString(),
+        articles: dayCountMap[day] || 0
+      };
+    });
 
     // Get article status counts
     const statusCounts = await articleModel.aggregate([
@@ -1107,12 +1121,7 @@ export const getUserArticleStats = async (req, res) => {
       }
     ]);
 
-    // Default data if no articles exist
-    const defaultLineData = Array.from({ length: 30 }, (_, i) => ({
-      day: `${i+1}`,
-      articles: 0
-    }));
-
+    // Default pie data if no articles exist
     const defaultPieData = [
       { name: "Publish", value: 0 },
       { name: "Under Review", value: 0 },
@@ -1120,7 +1129,7 @@ export const getUserArticleStats = async (req, res) => {
     ];
 
     res.status(200).json({
-      lineData: monthlyData.length ? monthlyData : defaultLineData,
+      lineData: completeLineData,
       pieData: statusCounts.length ? statusCounts : defaultPieData,
       totalArticles: statusCounts.reduce((sum, item) => sum + item.value, 0)
     });
@@ -1129,6 +1138,7 @@ export const getUserArticleStats = async (req, res) => {
     res.status(500).json({ message: "Error fetching article stats", error });
   }
 };
+
 export const getArticleStatusGraphData = async (req, res) => {
   try {
     const today = new Date();
