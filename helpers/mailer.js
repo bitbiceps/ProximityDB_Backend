@@ -549,3 +549,92 @@ export const sendArticleVerifySuccesfullly = async (to, link) => {
   return await transporter.sendMail(mailOptions);
 };
 
+
+export const sendPurchaseConfirmation = async (to, name) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
+    to,
+    subject: "Your Purchase Was Successful",
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Purchase Confirmation</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; }
+          .container { max-width: 600px; margin: 40px auto; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+          .header { text-align: center; padding: 20px; }
+          h1 { color: #2d3748; font-size: 24px; margin-bottom: 10px; }
+          .content { padding: 20px; text-align: center; }
+          .button { display: inline-block; background-color: #eeedf2; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; }
+          .footer { text-align: center; padding-top: 20px; color: #718096; font-size: 14px; }
+          .a {color : #f8f9fa}
+
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Thank You for Your Purchase, ${name}!</h1>
+          </div>
+          <div class="content">
+            <p>Your purchase has been successfully processed and will be reflected in your account shortly.</p>
+            <p>You can now access all the premium features associated with your plan.</p>
+            <a href="${process.env.FRONTEND_URL}/dashboard" class="button">Go to Dashboard</a>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Proximity. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
+  return await transporter.sendMail(mailOptions);
+};
+
+export const sendWelcomeWithToken = async (to, name, token) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USERNAME,
+    to,
+    subject: "Welcome to Proximity!",
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to Proximity</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; }
+          .container { max-width: 600px; margin: 40px auto; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+          .header { text-align: center; padding: 20px; }
+          h1 { color: #2d3748; font-size: 24px; margin-bottom: 10px; }
+          .content { padding: 20px; text-align: center; }
+          .button { display: inline-block; background-color: #eeedf2; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; }
+          .footer { text-align: center; padding-top: 20px; color: #718096; font-size: 14px; }
+          .token { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; word-break: break-all; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Welcome to Proximity, ${name}!</h1>
+          </div>
+          <div class="content">
+            <p>Your account has been created successfully.</p>
+            <p>Or click the button below to get started:</p>
+            <a href="${process.env.FRONTEND_URL}/set-password?token=${token}" class="button">Complete Registration</a>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Proximity. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
+  return await transporter.sendMail(mailOptions);
+};

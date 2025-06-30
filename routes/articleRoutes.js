@@ -16,6 +16,7 @@ import {
   handleArticleStatusUpdate,
   handleArticleRegenerate,
   handleGetActiveArticles,
+  getUserArticleStats,
   getArticleStatusGraphData
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
@@ -39,6 +40,7 @@ articleRouter.post("/update-status",handleArticleStatusUpdate);
 articleRouter.post("/regenerate",handleArticleRegenerate);
 articleRouter.get("/active-articles/:id", handleGetActiveArticles);
 articleRouter.post("/regenerate", handleArticleRegenerate);
+articleRouter.get("/stats/:userId", getUserArticleStats);
 articleRouter.get("/line-graph", getArticleStatusGraphData)
 
 

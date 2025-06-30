@@ -6,6 +6,7 @@ import { articleStatus, determineBestOutlets } from "../helpers/utils.js";
 import io from "../server.js";
 import { sendNotification } from "../server.js";
 import MessageModel from "../models/messageModal.js";
+import mongoose from "mongoose";
 
 // Function to handle questionnaire and generate articles
 export const handleQuestionnaire = async (req, res) => {
@@ -1022,21 +1023,119 @@ export const handleGetActiveArticles = async (req, res) => {
   try {
     const { id: userId } = req.params;
 
-    const articles = await articleModel
-      .find({ 
-        status: { $ne: "publish" }, 
-        userId: userId 
-      })
-      .populate("profileImage topicId");
+    const user = await userModel.findById(userId);
+    const articleAllowance = user?.articleCount || 0;
 
-    if (!articles.length) {
-          return res.status(200).json({ message: "Success", activeArticles: 0 });
-    }
+    const activeArticles = await articleModel.countDocuments({ 
+      status: { $ne: "publish" }, 
+      userId: userId 
+    });
 
-    return res.status(200).json({ message: "Success", activeArticles: articles.length });
+    const totalArticlesCreated = await articleModel.countDocuments({ 
+      userId: userId 
+    });
+
+
+    const remainingArticles = Math.max(0, articleAllowance - totalArticlesCreated);
+
+    return res.status(200).json({ 
+      message: "Success", 
+      activeArticles,
+      articleAllowance,
+      remainingArticles 
+    });
+
   } catch (error) {
     console.error(error.message);
-    return res.status(500).json({ message: "An error occurred", error: error.message });
+    return res.status(500).json({ 
+      message: "An error occurred", 
+      error: error.message 
+    });
+  }
+};
+
+
+export const getUserArticleStats = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    // Get daily published article counts
+    const dailyData = await articleModel.aggregate([
+      {
+        $match: {
+          userId: userObjectId,
+          status: 'publish',
+          createdAt: {
+            $gte: new Date(new Date().setDate(1)), // First day of current month
+            $lt: new Date(new Date().setMonth(new Date().getMonth() + 1)) // First day of next month
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // Create a map of days with article counts
+    const dayCountMap = {};
+    dailyData.forEach(item => {
+      const day = new Date(item._id).getDate();
+      dayCountMap[day] = item.count;
+    });
+
+    // Generate complete month data with zeros for missing days
+    const daysInMonth = 30; // Assuming we want to show 30 days
+    const completeLineData = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      return {
+        day: day.toString(),
+        articles: dayCountMap[day] || 0
+      };
+    });
+
+    // Get article status counts
+    const statusCounts = await articleModel.aggregate([
+      {
+        $match: {
+          userId: userObjectId
+        }
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          name: "$_id",
+          value: "$count",
+          _id: 0
+        }
+      }
+    ]);
+
+    // Default pie data if no articles exist
+    const defaultPieData = [
+      { name: "Publish", value: 0 },
+      { name: "Under Review", value: 0 },
+      { name: "Unpublish", value: 0 }
+    ];
+
+    res.status(200).json({
+      lineData: completeLineData,
+      pieData: statusCounts.length ? statusCounts : defaultPieData,
+      totalArticles: statusCounts.reduce((sum, item) => sum + item.value, 0)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching article stats", error });
   }
 };
 
