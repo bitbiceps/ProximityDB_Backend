@@ -12,10 +12,10 @@ export const sendWelcomeEmailToTeam = async (to, name = "new team member") => {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; background: #f9f9f9;">
       <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
-        <h2 style="color: #4CAF50; margin-top: 0;">👋 Welcome to the CacheLabs Team, ${name}!</h2>
-        <p>We're hyped to have you onboard. Get ready to build, ship, and break production (just kidding... maybe). 🤓</p>
+        <h2 style="color: #4CAF50; margin-top: 0;">👋 Welcome to Proximity Internal, ${name}!</h2>
+        <p>We're excited to have you here. You now have access to Proximity Internal – your central hub for everything you need.</p>
 
-        <p>Your journey at <strong>CacheLabs</strong> starts now. To access your dashboard, hit that juicy button below.</p>
+        <p>To get started, click the button below to log in and explore the dashboard.</p>
 
         <div style="text-align: center; margin: 30px 0;">
           <a href=${process.env.FRONTEND_URL_INTERNAL_PROD} target="_blank" style="padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -23,18 +23,18 @@ export const sendWelcomeEmailToTeam = async (to, name = "new team member") => {
           </a>
         </div>
 
-        <p>If you have any questions, just scream into the void (or reply to this email).</p>
+        <p>If you need help, feel free to reply to this email.</p>
 
-        <p style="color: #888; font-size: 12px;">– CacheLabs People Ops</p>
+        <p style="color: #888; font-size: 12px;">– Proximity Internal Team</p>
       </div>
     </div>
   `;
 
   try {
     await transporter.sendMail({
-      from: `"CacheLabs" <${process.env.EMAIL_USERNAME}>`,
+      from: `"Proximity Internal" <${process.env.EMAIL_USERNAME}>`,
       to,
-      subject: "👋 Welcome to CacheLabs!",
+      subject: "👋 Welcome to Proximity Internal!",
       html: htmlContent,
     });
 

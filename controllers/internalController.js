@@ -917,6 +917,12 @@ export const ticketListUserWise = async (req, res) => {
       (group) => group.ticketData.length > 0
     );
 
+    result.sort((a, b) => {
+  const aLatest = new Date(a.ticketData[0]?.createdAt).getTime();
+  const bLatest = new Date(b.ticketData[0]?.createdAt).getTime();
+  return bLatest - aLatest;
+});
+
     return res.status(200).json({
       message: "Tickets fetched successfully",
       data: result,
