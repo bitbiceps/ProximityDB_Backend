@@ -28,7 +28,9 @@ import {
   handleAddCustomStatus,
   handleGetUnassignedArticles,
   getUserDetails,
-  handleAddOutlet
+  handleAddOutlet,
+  handleUpdateTeamProfile,
+  handleGetTeamDetails
 } from "../controllers/internalController.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
 
@@ -71,6 +73,7 @@ internalRouter.get("/team/get-tickets", getAssignedTickets);
 
 internalRouter.get("/team/get-articles", getAssignedArticles);
 internalRouter.get("/team/login", teamLogin);
+internalRouter.get("/team-details/:teamId" , handleGetTeamDetails)
 
 // add extra status 
 internalRouter.get("/team/unassigned" , handleGetUnassignedArticles)
@@ -78,6 +81,10 @@ internalRouter.post("/article/add-status", requireSudo, handleAddCustomStatus)
 
 // assigned tickets
 internalRouter.post("/tickets/:ticketId/assign", assignTicket);
+
+// update team profile 
+
+internalRouter.put("/update/team-profile", handleUpdateTeamProfile)
 
 
 export default internalRouter;

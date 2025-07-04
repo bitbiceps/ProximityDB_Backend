@@ -7,6 +7,7 @@ import profileImageModel from "../models/profileImageModel.js";
 import articleImageModel from "../models/articleImageModel.js";
 import articleModel from "../models/articleModels.js";
 import { articleMulter, profileMulter } from "../helpers/multer.js";
+import teamModel from "../models/teamModel.js";
 
 const imageRouter = Router();
 
@@ -142,5 +143,67 @@ imageRouter.post("/article", articleMulter.single("file"), async (req, res) => {
     res.status(500).send("Error uploading file: " + error.message);
   }
 });
+
+imageRouter.post("/team-profile", profileMulter.single("file"), async (req, res) => {
+  if (!req.file || !req.body.team) {
+    return res.status(400).send("No file uploaded or team ID missing");
+  }
+
+  const cleanFilename = req.file.originalname.split(" ").join("_");
+  const fileUrl = `${profileFile}${req.file.filename}`;
+
+  try {
+    const existingImage = await profileImageModel.findOne({
+      team: req.body.team
+    });
+
+    if (existingImage) {
+      // If same filename, return existing
+      if (existingImage.filename === cleanFilename) {
+        return res.send({
+          message: "Team profile image updated successfully!",
+          imageUrl: existingImage.filepath,
+        });
+      }
+
+      // Remove old file
+      const oldFilePath = `./uploads/profile/${existingImage.filename}`;
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+
+      // Update existing record
+      existingImage.filename = cleanFilename;
+      existingImage.filepath = fileUrl;
+      await existingImage.save();
+
+      return res.send({
+        message: "Team profile image updated successfully!",
+        imageUrl: existingImage.filepath,
+      });
+    }
+
+    const newImage = new profileImageModel({
+      filename: cleanFilename,
+      filepath: fileUrl,
+      team: req.body.team,
+    });
+
+    await newImage.save();
+
+    const team = await teamModel.findById(req.body.team);
+    team.profileImage = newImage._id;
+    await team.save();
+
+    res.send({
+      message: "Team profile image uploaded successfully!",
+      imageUrl: newImage.filepath,
+    });
+
+  } catch (error) {
+    res.status(500).send("Error uploading team profile image: " + error.message);
+  }
+});
+
 
 export default imageRouter;

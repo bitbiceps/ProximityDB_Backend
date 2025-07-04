@@ -945,7 +945,7 @@ export const teamLogin = async (req, res) => {
   }
 
   try {
-    const member = await teamModel.findOne({ email: email.toLowerCase() });
+    const member = await teamModel.findOne({ email: email.toLowerCase() }).populate('profileImage').lean();
 
     if (!member) {
       return res
@@ -957,10 +957,7 @@ export const teamLogin = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       user: {
-        id: member._id,
-        username: member.username,
-        email: member.email,
-        role: member.role,
+        ...member
       },
     });
   } catch (error) {
@@ -1227,5 +1224,60 @@ export const handleAddOutlet = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Server error", error: error.message });
+  }
+};
+
+
+export const handleUpdateTeamProfile = async (req, res) => {
+  try {
+    const { team, phone, dob, gender } = req.body;
+
+    if (!team) {
+      return res.status(400).json({ error: "Team ID is required" });
+    }
+
+    const updatedTeam = await teamModel.findByIdAndUpdate(
+      team,
+      {
+        phone,
+        dob,
+        gender,
+      },
+      { new: true }
+    );
+
+    if (!updatedTeam) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    res.status(200).json({
+      message: "Team profile updated successfully",
+      data: updatedTeam,
+    });
+  } catch (error) {
+    console.error("Error updating team profile:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+export const handleGetTeamDetails = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+
+    if (!teamId) {
+      return res.status(400).json({ error: "Team ID is required" });
+    }
+
+    const team = await teamModel.findById(teamId).populate('profileImage').lean();
+
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    res.status(200).json({ data: team });
+  } catch (error) {
+    console.error("Error fetching team details:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
