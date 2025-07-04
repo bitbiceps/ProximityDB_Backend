@@ -5,8 +5,9 @@ export const articleStatus = {
   completed: "published",
 };
 
-export const profileFile = "https://api.proximity.press/uploads/profile/";
-export const articleFile = "https://api.proximity.press/uploads/article/";
+const url = process.env.BACKEND_URL || 'https://api.proximity.press';
+export const profileFile = `${url}/uploads/profile/`;
+export const articleFile = `${url}/uploads/article/`;
 // export const profileFile = "http://localhost:4000/uploads/profile/"
 // export const articleFile = "http://localhost:4000/uploads/article/"
 
