@@ -15,6 +15,8 @@ import MessageModel from "../models/messageModal.js";
 import teamMessageModel from "../models/teamMessageModel.js";
 import ticketModel from "../models/ticketModel.js";
 import teamModel from "../models/teamModel.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 export const handleGetAllCount = async (req, res) => {
   try {
@@ -27,7 +29,7 @@ export const handleGetAllCount = async (req, res) => {
       });
     }
 
-    const member = await teamModel.findById(teamId).select('role _id');
+    const member = await teamModel.findById(teamId).select("role _id");
     if (!member) {
       return res.status(404).json({
         success: false,
@@ -39,7 +41,7 @@ export const handleGetAllCount = async (req, res) => {
     const STATUS = {
       UNDER_REVIEW: "under review",
       PUBLISH: "publish",
-      UNPUBLISH: "unpublish"
+      UNPUBLISH: "unpublish",
     };
 
     if (member.role === "sudo") {
@@ -52,27 +54,32 @@ export const handleGetAllCount = async (req, res) => {
               {
                 $group: {
                   _id: "$status",
-                  count: { $sum: 1 }
-                }
-              }
-            ]
-          }
-        }
+                  count: { $sum: 1 },
+                },
+              },
+            ],
+          },
+        },
       ]);
 
       const counts = {
         total: results[0].total[0]?.count || 0,
         unassigned: results[0].unassigned[0]?.count || 0,
-        totalPublish: results[0].byStatus.find(s => s._id === STATUS.PUBLISH)?.count || 0,
-        underReview: results[0].byStatus.find(s => s._id === STATUS.UNDER_REVIEW)?.count || 0,
-        unpublished: results[0].byStatus.find(s => s._id === STATUS.UNPUBLISH)?.count || 0
+        totalPublish:
+          results[0].byStatus.find((s) => s._id === STATUS.PUBLISH)?.count || 0,
+        underReview:
+          results[0].byStatus.find((s) => s._id === STATUS.UNDER_REVIEW)
+            ?.count || 0,
+        unpublished:
+          results[0].byStatus.find((s) => s._id === STATUS.UNPUBLISH)?.count ||
+          0,
       };
 
       return res.status(200).json({
         success: true,
         message: "Dashboard counts fetched successfully",
         data: counts,
-        role: member.role
+        role: member.role,
       });
     }
 
@@ -80,8 +87,10 @@ export const handleGetAllCount = async (req, res) => {
       {
         $match: {
           assignee: member._id,
-          status: { $in: [STATUS.UNDER_REVIEW, STATUS.PUBLISH, STATUS.UNPUBLISH] }
-        }
+          status: {
+            $in: [STATUS.UNDER_REVIEW, STATUS.PUBLISH, STATUS.UNPUBLISH],
+          },
+        },
       },
       {
         $facet: {
@@ -89,20 +98,20 @@ export const handleGetAllCount = async (req, res) => {
             {
               $group: {
                 _id: "$status",
-                count: { $sum: 1 }
-              }
-            }
+                count: { $sum: 1 },
+              },
+            },
           ],
-          totalAssigned: [{ $count: "count" }]
-        }
-      }
+          totalAssigned: [{ $count: "count" }],
+        },
+      },
     ]);
 
     const counts = {
       underReview: 0,
       publish: 0,
       unpublish: 0,
-      totalAssigned: results[0].totalAssigned[0]?.count || 0
+      totalAssigned: results[0].totalAssigned[0]?.count || 0,
     };
 
     results[0].byStatus.forEach(({ _id, count }) => {
@@ -115,15 +124,14 @@ export const handleGetAllCount = async (req, res) => {
       success: true,
       message: "Dashboard counts fetched successfully",
       data: counts,
-      role: member.role
+      role: member.role,
     });
-
   } catch (error) {
     console.error("Error fetching article counts:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -525,12 +533,13 @@ export const createTicket = async (req, res) => {
     // Check existing open/pending tickets count
     const openTicketsCount = await ticketModel.countDocuments({
       userId,
-      status: { $in: ["open", "pending"] }
+      status: { $in: ["open", "pending"] },
     });
 
     if (openTicketsCount >= 3) {
       return res.status(400).json({
-        message: "You already have 3 open or pending tickets. Please close some before creating new ones."
+        message:
+          "You already have 3 open or pending tickets. Please close some before creating new ones.",
       });
     }
 
@@ -539,15 +548,15 @@ export const createTicket = async (req, res) => {
       subject,
       description,
       subTopic,
-      status: "open" // Set default status
+      status: "open", // Set default status
     });
 
     res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {
     console.error("createTicket error:", err);
-    res.status(500).json({ 
-      message: "Failed to create ticket", 
-      details: err.message 
+    res.status(500).json({
+      message: "Failed to create ticket",
+      details: err.message,
     });
   }
 };
@@ -584,7 +593,7 @@ export const listTickets = async (req, res) => {
     const tickets =
       isTeam === "true"
         ? await ticketModel.find().sort({ updtedAt: -1 })
-        : await ticketModel.find({ userId }).sort({updatedAt : -1});
+        : await ticketModel.find({ userId }).sort({ updatedAt: -1 });
 
     res.status(200).json(tickets);
   } catch (err) {
@@ -707,7 +716,18 @@ export const addNewTeamMember = async (req, res) => {
 
     const newMember = new teamModel({ username, email, role });
     await newMember.save();
-    sendWelcomeEmailToTeam(email);
+
+    const token = jwt.sign(
+      {
+        id: newMember._id,
+        email: email,
+        role: role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    sendWelcomeEmailToTeam(email , token);
 
     res.status(201).json({ message: "Team member added", member: newMember });
   } catch (err) {
@@ -918,10 +938,10 @@ export const ticketListUserWise = async (req, res) => {
     );
 
     result.sort((a, b) => {
-  const aLatest = new Date(a.ticketData[0]?.createdAt).getTime();
-  const bLatest = new Date(b.ticketData[0]?.createdAt).getTime();
-  return bLatest - aLatest;
-});
+      const aLatest = new Date(a.ticketData[0]?.createdAt).getTime();
+      const bLatest = new Date(b.ticketData[0]?.createdAt).getTime();
+      return bLatest - aLatest;
+    });
 
     return res.status(200).json({
       message: "Tickets fetched successfully",
@@ -937,32 +957,62 @@ export const ticketListUserWise = async (req, res) => {
 
 export const teamLogin = async (req, res) => {
   const email = req.headers["internal-user-email"];
+  const { password } = req.body;
 
   if (!email) {
     return res
       .status(400)
-      .json({ message: "Missing internal-user-email header" });
+      .json({ success: false, message: "Missing internal-user-email header" });
   }
 
   try {
-    const member = await teamModel.findOne({ email: email.toLowerCase() }).populate('profileImage').lean();
+    const member = await teamModel
+      .findOne({ email: email.toLowerCase() })
+      .populate("profileImage")
+      .lean();
 
     if (!member) {
       return res
         .status(401)
-        .json({ message: "Unauthorized: Not a team member" });
+        .json({ success: false, message: "Unauthorized: Not a team member" });
     }
 
-    // Optional: You can return role/info if needed for frontend
+    // Check if password is set
+    if (!member.password) {
+      return res.status(403).json({
+        success: false,
+        message: "Please set up your password first",
+        needsPasswordSetup: true,
+      });
+    }
+
+    // If password is provided in request but user has no password set
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, member.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+    
     return res.status(200).json({
+      success: true,
       message: "Login successful",
-      user: {
-        ...member
-      },
+      user: {...member},
     });
   } catch (error) {
     console.error("Team login failed:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal Server Error" 
+    });
   }
 };
 
@@ -1227,7 +1277,6 @@ export const handleAddOutlet = async (req, res) => {
   }
 };
 
-
 export const handleUpdateTeamProfile = async (req, res) => {
   try {
     const { team, phone, dob, gender } = req.body;
@@ -1260,7 +1309,6 @@ export const handleUpdateTeamProfile = async (req, res) => {
   }
 };
 
-
 export const handleGetTeamDetails = async (req, res) => {
   try {
     const { teamId } = req.params;
@@ -1269,7 +1317,10 @@ export const handleGetTeamDetails = async (req, res) => {
       return res.status(400).json({ error: "Team ID is required" });
     }
 
-    const team = await teamModel.findById(teamId).populate('profileImage').lean();
+    const team = await teamModel
+      .findById(teamId)
+      .populate("profileImage")
+      .lean();
 
     if (!team) {
       return res.status(404).json({ error: "Team not found" });
@@ -1279,5 +1330,101 @@ export const handleGetTeamDetails = async (req, res) => {
   } catch (error) {
     console.error("Error fetching team details:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const handleSetPasswordTeam = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and password are required",
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long",
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+
+    const team = await teamModel.findById(decoded.id);
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Update team password
+    team.password = hashedPassword;
+    await team.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password set successfully",
+    });
+  } catch (error) {
+    console.error("Error setting team password:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+export const changePassword = async (req, res) => {
+  try {
+    const { password, email } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: "New password cannot be empty." });
+    }
+
+    // Check if email is provided
+    if (!email) {
+      return res.status(400).json({ message: "Email cannot be empty." });
+    }
+
+    // Find the userModel by email
+    const user = await teamModel.findOne({ email });
+
+    // If userModel is not found
+    if (!user) {
+      return res.status(404).json({ message: "user not found." });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update the userModel's password
+    user.password = hashedPassword;
+
+    // Save the updated userModel
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully." });
+  } catch (error) {
+    // Handle any errors
+    return res
+      .status(500)
+      .json({ error: "Failed to change password. " + error.message });
   }
 };

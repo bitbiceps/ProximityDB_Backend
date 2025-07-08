@@ -30,7 +30,9 @@ import {
   getUserDetails,
   handleAddOutlet,
   handleUpdateTeamProfile,
-  handleGetTeamDetails
+  handleGetTeamDetails,
+  handleSetPasswordTeam,
+  changePassword
 } from "../controllers/internalController.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
 
@@ -60,7 +62,7 @@ internalRouter.post("/tickets/:ticketId/messages", postMessage); // Post message
 internalRouter.patch("/tickets/:ticketId/close", closeTicket); // Post message on a ticket
 
 // tickets
-internalRouter.post("/team/add", requireSudo, addNewTeamMember);
+internalRouter.post("/team/add", addNewTeamMember);
 internalRouter.get("/team/members", getTeamMembers);
 // assigned tickets
 internalRouter.post("/tickets/:ticketId/assign", requireSudo, assignTicket);
@@ -72,7 +74,7 @@ internalRouter.get("/team/get-tickets", getAssignedTickets);
 //get assigned articles to a user
 
 internalRouter.get("/team/get-articles", getAssignedArticles);
-internalRouter.get("/team/login", teamLogin);
+internalRouter.post("/team/login", teamLogin);
 internalRouter.get("/team-details/:teamId" , handleGetTeamDetails)
 
 // add extra status 
@@ -85,6 +87,15 @@ internalRouter.post("/tickets/:ticketId/assign", assignTicket);
 // update team profile 
 
 internalRouter.put("/update/team-profile", handleUpdateTeamProfile)
+
+// set-password
+
+internalRouter.post("/team/set-password", handleSetPasswordTeam);
+
+// change-password 
+internalRouter.post("/team/change-password", changePassword);
+
+
 
 
 export default internalRouter;

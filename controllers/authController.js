@@ -226,6 +226,8 @@ export const checkAuth = async (req, res) => {
   }
 };
 
+
+// Important : this is used for sending the otp for the internal team accounts too.
 export const handleResetPassword = async (req, res) => {
   try {
     const { email } = req.body; // Email is provided in the request body

@@ -8,39 +8,130 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendWelcomeEmailToTeam = async (to, name = "new team member") => {
-  const htmlContent = `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; background: #f9f9f9;">
-      <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
-        <h2 style="color: #4CAF50; margin-top: 0;">👋 Welcome to Proximity Internal, ${name}!</h2>
-        <p>We're excited to have you here. You now have access to Proximity Internal – your central hub for everything you need.</p>
-
-        <p>To get started, click the button below to log in and explore the dashboard.</p>
-
-        <div style="text-align: center; margin: 30px 0;">
-          <a href=${process.env.FRONTEND_URL_INTERNAL_PROD} target="_blank" style="padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-            🔐 Login to Your Account
-          </a>
+export const sendWelcomeEmailToTeam = async (to, token, name = "new team member") => {
+  console.log(`Sending welcome email to ${to}`,`${process.env.FRONTEND_URL_INTERNAL_PROD}/set-password/${token}`);
+  const mailOptions = {
+    from: `"Proximity Internal" <${process.env.EMAIL_USERNAME}>`,
+    to,
+    subject: "👋 Welcome to Proximity Internal!",
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to Proximity</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+          }
+          .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          .logo-text {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+          }
+          .logo-text span {
+            font-size: 32px;
+            font-weight: 700;
+            color: #4f46e5;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+          }
+          .header {
+            text-align: center;
+            padding: 20px;
+          }
+          h1 {
+            color: #2d3748;
+            font-size: 24px;
+            margin: 0;
+            margin-bottom: 10px;
+          }
+          .content {
+            padding: 30px 20px;
+            text-align: center;
+          }
+          p {
+            color: #4a5568;
+            font-size: 16px;
+            margin: 0;
+            margin-bottom: 20px;
+          }
+          .login-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #4CAF50;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: background-color 0.3s ease;
+          }
+          .login-button:hover {
+            background-color: #45a049;
+          }
+          .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 20px;
+          }
+          .footer p {
+            font-size: 14px;
+            color: #718096;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="logo-text">
+            <span>PROXIMITY</span>
+          </div>
+          <div class="header">
+            <h1>👋 Welcome to Proximity Internal, ${name}!</h1>
+          </div>
+          <div class="content">
+            <p>We're excited to have you here. You now have access to Proximity Internal – your central hub for everything you need.</p>
+            
+            <p>To get started, click the button below to log in and explore the dashboard.</p>
+            
+            <a href="${process.env.FRONTEND_URL_INTERNAL_PROD}/set-password/${token}" class="login-button">
+              Login to Your Account
+            </a>
+            
+            <p>If you need help, feel free to reply to this email.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Proximity Internal. All rights reserved.</p>
+            <p>This is an automated message, please do not reply to this email.</p>
+          </div>
         </div>
-
-        <p>If you need help, feel free to reply to this email.</p>
-
-        <p style="color: #888; font-size: 12px;">– Proximity Internal Team</p>
-      </div>
-    </div>
-  `;
+      </body>
+      </html>
+    `,
+    text: `Welcome to Proximity Internal, ${name}!\n\nPlease log in to your account by visiting: ${process.env.FRONTEND_URL_INTERNAL_PROD}/set-password/${token}\n\nIf you need help, feel free to reply to this email.\n\n– Proximity Internal Team`
+  };
 
   try {
-    await transporter.sendMail({
-      from: `"Proximity Internal" <${process.env.EMAIL_USERNAME}>`,
-      to,
-      subject: "👋 Welcome to Proximity Internal!",
-      html: htmlContent,
-    });
-
+    await transporter.sendMail(mailOptions);
     console.log(`✅ Welcome email sent to ${to}`);
+    return true;
   } catch (error) {
     console.error("❌ Error sending welcome email:", error);
+    return false;
   }
 };
 
