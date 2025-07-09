@@ -724,7 +724,7 @@ export const addNewTeamMember = async (req, res) => {
         role: role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1d" }
     );
 
     sendWelcomeEmailToTeam(email , token);
