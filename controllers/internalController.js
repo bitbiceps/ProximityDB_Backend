@@ -4,7 +4,7 @@ import userModel from "../models/userModel.js";
 import { articleStatus } from "../helpers/utils.js";
 import createTask from "../helpers/clickUp.js";
 import { socketEvents } from "../helpers/utils.js";
-import io from "../server.js";
+import io, { sendTeamMessage } from "../server.js";
 import { sendNotification } from "../server.js";
 import {
   sendTopicVerifySuccessfully,
@@ -658,6 +658,8 @@ export const postMessage = async (req, res) => {
       text,
       readBy: [senderId],
     });
+
+    await sendTeamMessage({ ticketId, message: newMessage });
 
     // 📨 Fetch all messages for this ticket, sorted chronologically
     const allMessages = await teamMessageModel

@@ -95,6 +95,17 @@ io.on("connection", (socket) => {
       io.to(userSockets[userId]).emit("notification", message);
     }
   });
+
+  socket.on("joinTeamMessage", (ticketId) => {
+    socket.join(`teamTicket_${ticketId}`);
+    console.log(`Socket ${socket.id} joined team ticket ${ticketId}`);
+  });
+
+  socket.on("leaveTeamMessage", (ticketId) => {
+    socket.leave(`teamTicket_${ticketId}`);
+    console.log(`Socket ${socket.id} left team ticket ${ticketId}`);
+  });
+
 });
 
 export const sendNotification = ({ userId, message }) => {
@@ -105,6 +116,12 @@ export const sendNotification = ({ userId, message }) => {
     console.log(`User ${userId} is not online.`);
   }
 };
+
+
+export const  sendTeamMessage = ({ ticketId, message }) => {
+    io.to(`teamTicket_${ticketId}`).emit("teamMessage", message);
+    console.log(`Team message sent to ticket ${ticketId}`);
+}
 
 // Test route to ensure server is working
 app.get("/", async (req, res) => {
