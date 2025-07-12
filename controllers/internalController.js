@@ -551,6 +551,16 @@ export const createTicket = async (req, res) => {
       status: "open", // Set default status
     });
 
+    if (description) {
+      await teamMessageModel.create({
+        ticketId: ticket._id,
+        senderId: userId,
+        senderRole: 'user', // Assuming the creator is a user
+        text: description,
+        readBy: [userId],
+      });
+    }
+
     res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {
     console.error("createTicket error:", err);
