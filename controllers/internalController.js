@@ -4,7 +4,7 @@ import userModel from "../models/userModel.js";
 import { articleStatus } from "../helpers/utils.js";
 import createTask from "../helpers/clickUp.js";
 import { socketEvents } from "../helpers/utils.js";
-import io, { sendTeamMessage } from "../server.js";
+import io, { handleBroadcast, sendTeamMessage } from "../server.js";
 import { sendNotification } from "../server.js";
 import {
   sendTopicVerifySuccessfully,
@@ -557,7 +557,7 @@ export const createTicket = async (req, res) => {
         senderId: userId,
         senderRole: 'user', // Assuming the creator is a user
         text: description,
-        readBy: [userId],
+        readByUsers: [userId],
       });
     }
 
@@ -595,22 +595,68 @@ export const listTickets = async (req, res) => {
     const { userId, isTeam } = req.query;
 
     if (!isTeam && !userId) {
-      return res
-        .status(400)
-        .json({ error: "userId is required if not fetching for team" });
+      return res.status(400).json({ 
+        success: false,
+        error: "userId is required if not fetching for team" 
+      });
     }
 
-    const tickets =
-      isTeam === "true"
-        ? await ticketModel.find().sort({ updtedAt: -1 })
-        : await ticketModel.find({ userId }).sort({ updatedAt: -1 });
+    // Fetch tickets based on role
+    const tickets = isTeam === "true"
+      ? await ticketModel.find().sort({ updatedAt: -1 }).lean()
+      : await ticketModel.find({ userId }).sort({ updatedAt: -1 }).lean();
 
-    res.status(200).json(tickets);
+    // If no tickets found, return empty array
+    if (tickets.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: tickets
+      });
+    }
+
+    // Check for unread messages only if fetching for user (not team)
+    if (isTeam !== "true") {
+      // Get all ticket IDs
+      const ticketIds = tickets.map(ticket => ticket._id);
+
+      const readyField = isTeam === "true" ? 'readByTeams' : 'readByUsers';
+
+      // Find messages that haven't been read by this user
+      const unreadMessages = await teamMessageModel.find({
+        ticketId: { $in: ticketIds },
+        [readyField]: { $ne: userId }
+      }).select('ticketId');
+
+      // Create a Set of ticket IDs with unread messages
+      const unreadTicketIds = new Set(
+        unreadMessages.map(msg => msg.ticketId.toString())
+      );
+
+      // Add unread status to each ticket
+      const ticketsWithUnreadStatus = tickets.map(ticket => ({
+        ...ticket,
+        unread: unreadTicketIds.has(ticket._id.toString())
+      }));
+
+      return res.status(200).json({
+        success: true,
+        data: ticketsWithUnreadStatus
+      });
+    }
+
+    // For team requests, return tickets without unread check
+    return res.status(200).json({
+      success: true,
+      data: tickets
+    });
+
   } catch (err) {
     console.error("listTickets error:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to fetch tickets", details: err.message });
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to fetch tickets", 
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
@@ -650,16 +696,25 @@ export const postMessage = async (req, res) => {
       });
     }
 
+    const ticket = await ticketModel.findById(ticketId).select("userId");
+    if (!ticket) {
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+    const targetUserId = ticket.userId.toString();
+
+    const updateField = senderRole === "user" ? "readByUsers" : "readByTeams";
+
     // 💬 Create the message
     const newMessage = await teamMessageModel.create({
       ticketId,
       senderId,
       senderRole,
       text,
-      readBy: [senderId],
+      [updateField]: [senderId],
     });
 
     await sendTeamMessage({ ticketId, message: newMessage });
+    await handleBroadcast(newMessage , targetUserId);
 
     // 📨 Fetch all messages for this ticket, sorted chronologically
     const allMessages = await teamMessageModel
@@ -880,20 +935,44 @@ export const getAssignedTickets = async (req, res) => {
 
 export const ticketListUserWise = async (req, res) => {
   try {
+    const { id, role } = req.body; // Get user id and role from request
+    
+    // Validate role
+    if (!['user', 'team'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid role. Must be either 'user' or 'team'"
+      });
+    }
+
     const tickets = await ticketModel
       .find({ status: { $ne: "closed" } })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
     // Get all unique user IDs from the tickets
     const userIds = [
       ...new Set(tickets.map((t) => t.userId?.toString()).filter(Boolean)),
     ];
 
-    // Fetch all users in one query
-    const users = await userModel
-      .find({
-        _id: { $in: userIds },
+    // Determine the read field based on role
+    const readField = role === 'user' ? 'readByUsers' : 'readByTeams';
+
+    // Fetch all users and unread messages in parallel
+    const [users, unreadMessages] = await Promise.all([
+      userModel.find({ _id: { $in: userIds } }).select("fullName email"),
+      teamMessageModel.find({
+        ticketId: { $in: tickets.map(t => t._id) },
+        [readField]: { $ne: id } // Check if user/team hasn't read the message
       })
-      .select("fullName email"); // Select only needed fields
+    ]);
+
+    // Create a map of ticket IDs to their unread status
+    const ticketUnreadMap = new Map();
+    unreadMessages.forEach(msg => {
+      const ticketId = msg.ticketId.toString();
+      ticketUnreadMap.set(ticketId, true); // Mark ticket as having unread messages
+    });
 
     // Create a map for quick user lookup
     const userMap = new Map();
@@ -913,35 +992,40 @@ export const ticketListUserWise = async (req, res) => {
       const userIdStr = user._id.toString();
       resultMap.set(userIdStr, {
         userDetails: {
-          _id: user._id,
-          fullName: user.fullName,
-          email: user.email,
+          ...userMap.get(userIdStr),
+          unread: false, // Will update based on ticket unread status
         },
         ticketData: [],
       });
     });
 
-    // Assign tickets to users
+    // Assign tickets to users and check for unread status
     tickets.forEach((ticket) => {
-      if (!ticket.userId) {
-        return;
-      }
+      if (!ticket.userId) return;
 
       const userIdStr = ticket.userId.toString();
       const userGroup = resultMap.get(userIdStr);
+      if (!userGroup) return;
 
-      if (userGroup) {
-        userGroup.ticketData.push({
-          _id: ticket._id,
-          subject: ticket.subject,
-          subTopic: ticket.subTopic,
-          description: ticket.description,
-          status: ticket.status,
-          ticketId: ticket.ticketId,
-          createdAt: ticket.createdAt,
-          updatedAt: ticket.updatedAt,
-        });
+      const ticketIdStr = ticket._id.toString();
+      const hasUnreadMessages = ticketUnreadMap.has(ticketIdStr);
+
+      // Update user's unread status if this ticket has unread messages
+      if (hasUnreadMessages) {
+        userGroup.userDetails.unread = true;
       }
+
+      userGroup.ticketData.push({
+        _id: ticket._id,
+        subject: ticket.subject,
+        subTopic: ticket.subTopic,
+        description: ticket.description,
+        status: ticket.status,
+        ticketId: ticket.ticketId,
+        createdAt: ticket.createdAt,
+        updatedAt: ticket.updatedAt,
+        unread: hasUnreadMessages, // True if any message in this ticket is unread by this user/team
+      });
     });
 
     // Convert to array and filter out empty groups
@@ -949,6 +1033,7 @@ export const ticketListUserWise = async (req, res) => {
       (group) => group.ticketData.length > 0
     );
 
+    // Sort by the latest ticket date
     result.sort((a, b) => {
       const aLatest = new Date(a.ticketData[0]?.createdAt).getTime();
       const bLatest = new Date(b.ticketData[0]?.createdAt).getTime();
@@ -956,14 +1041,17 @@ export const ticketListUserWise = async (req, res) => {
     });
 
     return res.status(200).json({
+      success: true,
       message: "Tickets fetched successfully",
       data: result,
     });
   } catch (err) {
     console.error("listTickets error:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to fetch tickets", details: err.message });
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to fetch tickets", 
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
@@ -1440,3 +1528,61 @@ export const changePassword = async (req, res) => {
       .json({ error: "Failed to change password. " + error.message });
   }
 };
+
+export const handleTeamReadMessage = async (req, res) => {
+  try {
+    const { ticketId, role, id } = req.body;
+
+    if (!ticketId || !role || !id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields: ticketId, role, or id' 
+      });
+    }
+
+    const updateField = 
+      role === "user" ? "readByUsers" : 
+      role === "team" ? "readByTeams" : 
+      null;
+
+    if (!updateField) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid role. Must be either 'user' or 'team'." 
+      });
+    }
+
+    // Update the messages
+    const result = await teamMessageModel.updateMany(
+      {
+        ticketId,
+        [updateField]: { $ne: id },
+      },
+      {
+        $addToSet: { [updateField]: id },
+      }
+    );
+
+    // Check if any documents were modified
+    if (result.modifiedCount === 0) {
+      return res.status(200).json({ 
+        success: true, 
+        message: 'No unread messages found to update' 
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true,  
+      message: 'Messages marked as read successfully',
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error("Error updating TeamMessage read status:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+

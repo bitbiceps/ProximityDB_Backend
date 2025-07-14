@@ -1,5 +1,4 @@
-
-import './config/env.js';
+import "./config/env.js";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -16,8 +15,8 @@ import http from "http";
 import { Server } from "socket.io";
 import session from "express-session";
 import passport from "./passport.js";
-import cookieParser from 'cookie-parser';
-import frontendRouter from "./routes/frontendRoutes.js"
+import cookieParser from "cookie-parser";
+import frontendRouter from "./routes/frontendRoutes.js";
 
 const app = express();
 let userSockets = {}; // To keep track of connected users by their socket ID
@@ -31,21 +30,35 @@ mongoose
   .then(() => console.log("Database connected successfully!!"))
   .catch((err) => console.log("Error connecting to database", err));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false }  // true only on HTTPS
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // true only on HTTPS
+  })
+);
 
-app.use(cookieParser())
+app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 // Middleware
-app.use(cors({origin: process.env.NODE_ENV === "production" 
-      ? [process.env.FRONTEND_URL, "https://staging.dashboard.proximity.press" , "https://staging.proximity.press" , "https://proximity.press", "https://internal.proximity.press" , "https://dashboard.proximity.press"] 
-      : true ,
-     credentials: true }));
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? [
+            process.env.FRONTEND_URL,
+            "https://staging.dashboard.proximity.press",
+            "https://staging.proximity.press",
+            "https://proximity.press",
+            "https://internal.proximity.press",
+            "https://dashboard.proximity.press",
+          ]
+        : true,
+    credentials: true,
+  })
+);
 
 app.use("/webhooks", webhookRouter);
 app.use("/pay", express.json(), paymentRoutes);
@@ -57,13 +70,13 @@ app.use("/api", express.json(), registrationRoute);
 app.use("/uploads", express.static("uploads"));
 app.use("/upload", imageRouter);
 app.use("/user", express.json(), userRouter);
-app.use("/frontend",express.json() , frontendRouter);
+app.use("/frontend", express.json(), frontendRouter);
 
 // Socket.IO setup
 const server = http.createServer(app); // Create an HTTP server from the Express app
 const io = new Server(server, {
   cors: {
-    origin: "*", 
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
@@ -76,7 +89,6 @@ io.on("connection", (socket) => {
     userSockets[userId] = socket.id;
     console.log(`User ${userId} is registered with socket ${socket.id}`);
   });
-
   // Handle disconnect
   socket.on("disconnect", () => {
     for (let userId in userSockets) {
@@ -105,7 +117,6 @@ io.on("connection", (socket) => {
     socket.leave(`teamTicket_${ticketId}`);
     console.log(`Socket ${socket.id} left team ticket ${ticketId}`);
   });
-
 });
 
 export const sendNotification = ({ userId, message }) => {
@@ -117,11 +128,28 @@ export const sendNotification = ({ userId, message }) => {
   }
 };
 
+export const sendTeamMessage = ({ ticketId, message }) => {
+  io.to(`teamTicket_${ticketId}`).emit("teamMessage", message);
+  console.log(`Team message sent to ticket ${ticketId}`);
+};
 
-export const  sendTeamMessage = ({ ticketId, message }) => {
-    io.to(`teamTicket_${ticketId}`).emit("teamMessage", message);
-    console.log(`Team message sent to ticket ${ticketId}`);
-}
+// New logic-based broadcaster
+export const handleBroadcast = (message , userId) => {
+  const { senderId , senderRole } = message;
+  if (senderRole === "team") {
+    if (userSockets[userId]) {
+      io.to(userSockets[userId]).emit("broadcast", message);
+      console.log(`Broadcast sent to user ${userId}`);
+    } else {
+      console.log(`User ${userId} is not online.`);
+    }
+  } else if (senderRole === "user") {
+    io.emit("broadcastTeamMessage", message);
+    console.log(`Broadcast sent to team member`);
+  } else {
+    console.log("Invalid senderRole in broadcast.");
+  }
+};
 
 // Test route to ensure server is working
 app.get("/", async (req, res) => {

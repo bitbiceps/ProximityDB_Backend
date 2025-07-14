@@ -32,7 +32,8 @@ import {
   handleUpdateTeamProfile,
   handleGetTeamDetails,
   handleSetPasswordTeam,
-  changePassword
+  changePassword,
+  handleTeamReadMessage
 } from "../controllers/internalController.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
 
@@ -56,10 +57,11 @@ internalRouter.post("/add-outlet", handleAddOutlet);
 internalRouter.post("/tickets", createTicket); // Create ticket
 internalRouter.get("/tickets/single/:ticketId", getTicket); // Get ticket
 internalRouter.get("/tickets", listTickets); // List tickets
-internalRouter.get("/tickets-all", ticketListUserWise); // List tickets
+internalRouter.post("/tickets-all", ticketListUserWise); // List tickets
 internalRouter.get("/tickets/:ticketId/messages", getMessages); // Get messages of a ticket
 internalRouter.post("/tickets/:ticketId/messages", postMessage); // Post message on a ticket
 internalRouter.patch("/tickets/:ticketId/close", closeTicket); // Post message on a ticket
+internalRouter.post("/tickets/read" , handleTeamReadMessage);
 
 // tickets
 internalRouter.post("/team/add", addNewTeamMember);
