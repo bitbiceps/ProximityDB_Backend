@@ -87,7 +87,7 @@ io.on("connection", (socket) => {
   // Store socket ID for the user (for example, using userId or any identifier)
   socket.on("register", (userId) => {
     userSockets[userId] = socket.id;
-    console.log(`User ${userId} is registered with socket ${socket.id}`);
+    console.log(`User ${userId} is registered with socket  ${socket.id}`);
   });
   // Handle disconnect
   socket.on("disconnect", () => {
