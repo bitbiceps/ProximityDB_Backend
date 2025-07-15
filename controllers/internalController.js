@@ -111,7 +111,6 @@ export const handleGetAllCount = async (req, res) => {
       underReview: 0,
       publish: 0,
       unpublish: 0,
-      totalAssigned: results[0].totalAssigned[0]?.count || 0,
     };
 
     results[0].byStatus.forEach(({ _id, count }) => {

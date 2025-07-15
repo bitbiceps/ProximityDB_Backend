@@ -1161,7 +1161,7 @@ export const getArticleStatusGraphData = async (req, res) => {
 
     // Base match conditions
     const matchConditions = {
-      status: { $in: ["publish", "unpublish"] },
+      status: { $in: ["publish", "unpublish", "under review"] },
       createdAt: { $gte: new Date(thirtyDaysAgo.setHours(0, 0, 0, 0)) },
     };
 
@@ -1194,17 +1194,21 @@ export const getArticleStatusGraphData = async (req, res) => {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const key = date.toISOString().split("T")[0];
-      chartDataMap[key] = { date: key, publish: 0, unpublish: 0 };
+      chartDataMap[key] = { date: key, publish: 0, unpublish: 0};
     }
 
     // Fill counts from aggregation
-    result.forEach((item) => {
-      const date = item._id.date;
-      const status = item._id.status;
-      if (chartDataMap[date]) {
-        chartDataMap[date][status] = item.count;
-      }
-    });
+result.forEach((item) => {
+  const date = item._id.date;
+  const status = item._id.status;
+  if (chartDataMap[date]) {
+    if (status === "under review") {
+      chartDataMap[date]["unpublish"] += item.count; // Add to unpublish
+    } else {
+      chartDataMap[date][status] = item.count;
+    }
+  }
+});
 
     // Return array sorted by date ascending
     const finalData = Object.values(chartDataMap).sort((a, b) =>
