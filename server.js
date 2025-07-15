@@ -128,6 +128,10 @@ export const sendNotification = ({ userId, message }) => {
   }
 };
 
+export const ticketCreatedNotify = () => {
+    io.emit("ticketCreatedNotify", { message: "A new ticket has been created" , success : true});
+};
+
 export const sendTeamMessage = ({ ticketId, message }) => {
   io.to(`teamTicket_${ticketId}`).emit("teamMessage", message);
   console.log(`Team message sent to ticket ${ticketId}`);

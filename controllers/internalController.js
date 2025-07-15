@@ -4,7 +4,7 @@ import userModel from "../models/userModel.js";
 import { articleStatus } from "../helpers/utils.js";
 import createTask from "../helpers/clickUp.js";
 import { socketEvents } from "../helpers/utils.js";
-import io, { handleBroadcast, sendTeamMessage } from "../server.js";
+import io, { handleBroadcast, sendTeamMessage, ticketCreatedNotify } from "../server.js";
 import { sendNotification } from "../server.js";
 import {
   sendTopicVerifySuccessfully,
@@ -559,6 +559,8 @@ export const createTicket = async (req, res) => {
         readByUsers: [userId],
       });
     }
+
+    await ticketCreatedNotify();
 
     res.status(201).json({ message: "Ticket created", ticket });
   } catch (err) {
