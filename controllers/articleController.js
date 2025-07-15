@@ -1143,8 +1143,8 @@ export const getUserArticleStats = async (req, res) => {
 export const getArticleStatusGraphData = async (req, res) => {
   try {
     const { teamId } = req.params;
-    
-    const team = await teamModel.findById(teamId).select('role');
+
+    const team = await teamModel.findById(teamId).select("role");
     if (!team) {
       return res.status(404).json({
         success: false,
@@ -1153,7 +1153,6 @@ export const getArticleStatusGraphData = async (req, res) => {
     }
 
     const userObjectId = new mongoose.Types.ObjectId(teamId);
-
 
     const today = new Date();
     const thirtyDaysAgo = new Date();
@@ -1165,7 +1164,7 @@ export const getArticleStatusGraphData = async (req, res) => {
       createdAt: { $gte: new Date(thirtyDaysAgo.setHours(0, 0, 0, 0)) },
     };
 
-    if (team.role === 'team') {
+    if (team.role === "team") {
       matchConditions.assignee = userObjectId;
     }
 
@@ -1187,28 +1186,27 @@ export const getArticleStatusGraphData = async (req, res) => {
       },
     ]);
 
-
     // Init empty map with all dates for both statuses
     const chartDataMap = {};
     for (let i = 0; i < 30; i++) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const key = date.toISOString().split("T")[0];
-      chartDataMap[key] = { date: key, publish: 0, unpublish: 0};
+      chartDataMap[key] = { date: key, publish: 0, unpublish: 0 };
     }
 
     // Fill counts from aggregation
-result.forEach((item) => {
-  const date = item._id.date;
-  const status = item._id.status;
-  if (chartDataMap[date]) {
-    if (status === "under review") {
-      chartDataMap[date]["unpublish"] += item.count; // Add to unpublish
-    } else {
-      chartDataMap[date][status] = item.count;
-    }
-  }
-});
+    result.forEach((item) => {
+      const date = item._id.date;
+      const status = item._id.status;
+      if (chartDataMap[date]) {
+        if (status === "under review") {
+          chartDataMap[date]["unpublish"] += item.count; // Add to unpublish
+        } else {
+          chartDataMap[date][status] += item.count;
+        }
+      }
+    });
 
     // Return array sorted by date ascending
     const finalData = Object.values(chartDataMap).sort((a, b) =>
