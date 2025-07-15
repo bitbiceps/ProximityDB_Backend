@@ -1182,7 +1182,7 @@ export const getAssignedArticles = async (req, res) => {
     const totalArticles = await articleModel.countDocuments(query);
     const articles = await articleModel
       .find(query)
-      .select("status userId assignee")
+      .select("status userId assignee selectedTopic")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
