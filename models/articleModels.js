@@ -14,6 +14,11 @@ const articleSchema = new mongoose.Schema(
       // enum: ["unpublish", "publish", "under review"],
       default: "unpublish",
     },
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high"],
+      default: "low",
+    },
 
     extraStatus: {
       type: [String],

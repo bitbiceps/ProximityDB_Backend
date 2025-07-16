@@ -945,6 +945,13 @@ export const handleArticleStatusUpdate = async (req, res) => {
       message: "Article Status updated to " + status,
     });
 
+    const newMessage = await MessageModel.create({
+      userId: article?.userId,
+      messageType: "article_status_update",
+      articleId,
+      content: "Article status updated to " + status,
+    });
+
     return res.status(200).json({
       message: "Article submitted successfully",
       article,
@@ -1222,6 +1229,57 @@ export const getArticleStatusGraphData = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error while generating graph data.",
+    });
+  }
+};
+
+
+export const updateArticlePriority = async (req, res) => {
+  try {
+    const { articleId, priority } = req.body;
+
+    // Validate input
+    if (!articleId || !priority) {
+      return res.status(400).json({
+        success: false,
+        message: "Article ID and priority are required",
+      });
+    }
+
+    // Validate priority value
+    const validPriorities = ["low", "medium", "high"];
+    if (!validPriorities.includes(priority)) {
+      return res.status(400).json({
+        success: false,
+        message: "Priority must be one of: low, medium, high",
+      });
+    }
+
+    // Update article priority in database
+    const updatedArticle = await articleModel.findByIdAndUpdate(
+      articleId,
+      { priority },
+      { new: true }
+    );
+
+    if (!updatedArticle) {
+      return res.status(404).json({
+        success: false,
+        message: "Article not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Article priority updated successfully",
+      data: updatedArticle,
+    });
+  } catch (error) {
+    console.error("Error updating article priority:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };

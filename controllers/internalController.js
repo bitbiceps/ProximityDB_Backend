@@ -1119,14 +1119,27 @@ export const teamLogin = async (req, res) => {
 
 export const assignArticle = async (req, res) => {
   const { articleId } = req.params;
-  const { username } = req.body;
+  const { teamId , remove } = req.body;
 
-  if (!username) {
-    return res.status(400).json({ message: "Username is required" });
+  if(remove) {
+    const article = await articleModel.findById(articleId);
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    article.assignee = null;
+    await article.save();
+    return res.status(200).json({
+      message: "Article unassigned successfully",
+      article,
+    });
+  }
+
+  if (!teamId) {
+    return res.status(400).json({ message: "Team id is required" });
   }
 
   try {
-    const assignee = await teamModel.findOne({ username });
+    const assignee = await teamModel.findById(teamId);
     if (!assignee) {
       return res.status(404).json({ message: "Team member not found" });
     }
@@ -1149,7 +1162,7 @@ export const assignArticle = async (req, res) => {
     await article.save();
 
     res.status(200).json({
-      message: `Article assigned to ${username}`,
+      message: `Article assigned successfully`,
       article,
     });
   } catch (err) {

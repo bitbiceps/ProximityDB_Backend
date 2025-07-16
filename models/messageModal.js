@@ -37,7 +37,7 @@ const messageSchema = new mongoose.Schema(
         },
         messageType: {
             type: String,
-            enum: ["topic_update", "article_update", "general"],
+            enum: ["topic_update", "article_update", "general" , "article_status_update"],
             required: true,
         },
     },
