@@ -942,7 +942,7 @@ export const handleArticleStatusUpdate = async (req, res) => {
 
     sendNotification({
       userId: article?.userId,
-      message: "Article submitted succesfully",
+      message: "Article Status updated to " + status,
     });
 
     return res.status(200).json({
