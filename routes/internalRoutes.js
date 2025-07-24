@@ -33,9 +33,11 @@ import {
   handleGetTeamDetails,
   handleSetPasswordTeam,
   changePassword,
-  handleTeamReadMessage
+  handleTeamReadMessage,
+  handleArticleUpdate
 } from "../controllers/internalController.js";
 import requireSudo from "../middleware/internalMiddlewares.js";
+import { authorizeTeamForArticle } from "../middleware/internalMiddlewares.js";
 
 const internalRouter = Router();
 
@@ -97,7 +99,9 @@ internalRouter.post("/team/set-password", handleSetPasswordTeam);
 // change-password 
 internalRouter.post("/team/change-password", changePassword);
 
+//team article update
 
+internalRouter.post("/team/article-update", authorizeTeamForArticle , handleArticleUpdate);
 
 
 export default internalRouter;

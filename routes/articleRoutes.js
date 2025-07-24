@@ -21,6 +21,7 @@ import {
   updateArticlePriority
 } from "../controllers/articleController.js";
 import createTask from "../helpers/clickUp.js";
+import requireSudo from "../middleware/internalMiddlewares.js";
 // import requireSudo from "../middleware/internalMiddlewares.js";
 
 const articleRouter = Router();
@@ -43,7 +44,7 @@ articleRouter.get("/active-articles/:id", handleGetActiveArticles);
 articleRouter.post("/regenerate", handleArticleRegenerate);
 articleRouter.get("/stats/:userId", getUserArticleStats);
 articleRouter.get("/line-graph/:teamId", getArticleStatusGraphData)
-articleRouter.put("/update-priority", updateArticlePriority);
+articleRouter.put("/update-priority", requireSudo , updateArticlePriority);
 
 
 
