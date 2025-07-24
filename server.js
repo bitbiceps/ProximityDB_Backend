@@ -158,7 +158,7 @@ export const handleBroadcast = (message , userId) => {
 // Test route to ensure server is working
 app.get("/", async (req, res) => {
   try {
-    return res.status(200).json({ message: "Server working successfully!!." });
+    return res.status(200).json({ message: "Server working successfully." });
   } catch (error) {
     return res.status(500).json(error);
   }
