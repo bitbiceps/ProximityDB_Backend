@@ -3,7 +3,7 @@ import axios from 'axios'
 const clickUpApi = axios.create({
   baseURL: 'https://api.clickup.com/api/v2',
   headers: {
-    Authorization: process.env.CLICK_UP_API_KEY2,
+    Authorization:  'pk_81513741_08H5Q6KM9A5H18XFT3F21AFN5IOUSPDR',
     'Content-Type': 'application/json',
   },
 });
