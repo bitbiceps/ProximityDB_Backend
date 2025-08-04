@@ -106,7 +106,7 @@ export const sendNotification = ({ userId, message }) => {
   }
 };
 
-// Test route to ensure server is working
+//  Test route to ensure server is working
 app.get("/", async (req, res) => {
   try {
     return res.status(200).json({ message: "Server working successfully!!." });
